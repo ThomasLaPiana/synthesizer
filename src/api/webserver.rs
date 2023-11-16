@@ -1,5 +1,4 @@
 use crate::api::endpoints;
-use crate::database;
 use axum::Router;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
@@ -7,12 +6,7 @@ use tracing::Level;
 /// Run all server setup logic and start the server
 #[tokio::main(flavor = "current_thread")]
 async fn start() -> anyhow::Result<()> {
-    println!("> Getting database...");
-
-    let database = database::get_database();
-    println!("Database: {:?}", database);
-    database::add_to_database();
-    println!("Database: {:?}", database);
+    println!("> Checking Database...");
 
     // TODO: Use connection pooling
 
@@ -22,7 +16,7 @@ async fn start() -> anyhow::Result<()> {
         .compact()
         .init();
 
-    println!("> Building Routers...");
+    println!("> Building Router(s)...");
     let pipeline_api = endpoints::create_pipeline_router()
         // Add Logging
         .layer(
@@ -47,6 +41,6 @@ pub fn start_webserver() {
     let result = start();
 
     if let Some(err) = result.err() {
-        println!("Error: {err}")
+        eprintln!("Error: {err}")
     }
 }

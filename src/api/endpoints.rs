@@ -6,16 +6,15 @@ use serde_json::{json, Value};
 /// Create a router with all of the endpoints used by the Games service
 pub fn create_pipeline_router() -> Router {
     Router::new()
-        // Add Routes
-        .route("/api", get(root))
+        .route("/", get(root))
         .route("/api/health", get(health))
         .route("/api/pipelines", get(list_pipelines))
+        .route("/api/endpoints", get(list_endpoints))
 }
 
-// Generic welcome
 async fn root() -> Json<Value> {
     Json(json!({
-        "data": "You've reached the Gameslog server!"
+        "data": "You've reached the Synthesizer server!"
     }))
 }
 
@@ -23,6 +22,13 @@ async fn health() -> Json<Value> {
     Json(json!({
         "data": "Feeling healthy!"
     }))
+}
+
+/// Show all of the available routes for the server
+async fn list_endpoints() -> Json<Value> {
+    let router = create_pipeline_router();
+
+    Json(json!({"endpoints": "Some stuff"}))
 }
 
 /// Return a list of all pipelines

@@ -3,7 +3,8 @@ tasks:
     command: "cargo watch -c -x check"
 
   - name: wr
-    command: "cargo watch -c -x run"
+    command: >
+      cargo watch -c -x "run server"
 
   - name: run
-    command: cargo run
+    command: cargo run server

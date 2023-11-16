@@ -1,5 +1,6 @@
 pipelines:
   - name: pipeline1
+    schedule: "1 * * * *"
     tasks:
       - name: task1
         command: echo "task1"

@@ -8,7 +8,11 @@ pub struct Task {
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Pipeline {
-    pub id: String,
     pub name: String,
     pub schedule: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Pipelines {
+    pub pipelines: Vec<Pipeline>,
 }
