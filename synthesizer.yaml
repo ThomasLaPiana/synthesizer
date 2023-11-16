@@ -1,0 +1,5 @@
+pipelines:
+  - name: pipeline1
+    tasks:
+      - name: task1
+        command: echo "task1"

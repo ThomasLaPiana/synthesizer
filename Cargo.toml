@@ -1,8 +1,25 @@
 [package]
-name = "synthesizer"
+name = "server"
 version = "0.1.0"
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.71"
+askama = "0.12.0"
+axum = "0.6.20"
+clap = { version = "4.4.4", features = ["string", "cargo"] }
+cron-parser = "0.8.1"
+dotenvy = "0.15.7"
+hyper = { version = "0.14.27", features = ["full"] }
+serde = { version = "1.0.183", features = ["derive"] }
+serde_json = "1.0.105"
+serde_yaml = "0.9.25"
+sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite"] }
+tokio = { version = "1.31.0", features = ["full"] }
+toml = "0.8.8"
+tower = "0.4.13"
+tower-http = { version = "0.4.3", features = ["trace", "fs"] }
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+uuid = { version = "1.5.0", features = ["v4", "fast-rng", "macro-diagnostics"] }

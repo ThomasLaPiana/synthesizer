@@ -1,0 +1,9 @@
+tasks:
+  - name: wc
+    command: "cargo watch -c -x check"
+
+  - name: wr
+    command: "cargo watch -c -x run"
+
+  - name: run
+    command: cargo run
