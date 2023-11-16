@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"rust-analyzer.linkedProjects": [
+			"./Cargo.toml",
+			"./server/Cargo.toml",
+			"./Cargo.toml",
+			"./Cargo.toml",
+			"./Cargo.toml",
+			"./Cargo.toml",
+			"./Cargo.toml",
+			"./Cargo.toml"
+		],
+		"rust-analyzer.showUnlinkedFileNotification": false
+	}
+}
