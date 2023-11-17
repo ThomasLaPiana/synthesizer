@@ -34,3 +34,11 @@ There will be a relatively simple HTMX front-end to make it easier to interact w
 4. The scheduler does its thing, eventually marking the pipelines as `ready`
 5. The executor picks up the new pipeline.
 6. The pipeline's tasks are then run either via local worker threads or remotely. Ideally, the remote execution mode would be "infinitely scalable" by leveraging async/await to poll for remote work completion. This would remove the need to have a thread-per-task execution model.
+
+## Dev Notes
+
+This section is for tips on development workflow
+
+### Database
+
+* To add a migration, run `sqlx migrate add -r "<name>"`

@@ -4,6 +4,8 @@ use axum::{Json, Router};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
+/// Explicitly list all routes in a map that is used to generate
+/// the real router as well as documentation.
 pub fn get_endpoint_map() -> HashMap<String, MethodRouter> {
     let mut endpoints = HashMap::new();
 
@@ -15,7 +17,7 @@ pub fn get_endpoint_map() -> HashMap<String, MethodRouter> {
     endpoints
 }
 
-/// Create a router with all of the endpoints used by the Games service
+/// Automatically generate a router based off of the endpoint map
 pub fn create_pipeline_router() -> Router {
     let mut router = Router::new();
 
