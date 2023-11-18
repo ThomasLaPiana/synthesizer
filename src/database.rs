@@ -38,7 +38,7 @@ pub async fn run_migrations() -> Result<(), sqlx::Error> {
 
 /// Used in tests
 #[allow(dead_code)]
-pub fn reset_database() -> Result<(), sqlx::Error> {
-    sqlx::Sqlite::drop_database(DATABASE_URL);
+pub async fn reset_database() -> Result<(), sqlx::Error> {
+    sqlx::Sqlite::drop_database(DATABASE_URL).await?;
     Ok(())
 }

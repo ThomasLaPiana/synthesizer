@@ -1,32 +1,65 @@
-use axum::response::Response;
+use crate::database;
+use crate::models::Pipeline;
+use axum::response::{IntoResponse, Response};
 use axum::routing::{get, method_routing::MethodRouter, post};
-use axum::{Json, Router};
+use axum::{extract, Json, Router};
+use hyper::http::Method;
+use hyper::StatusCode;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+
+#[derive(Debug, Default)]
+pub struct Endpoint {
+    path: &'static str,
+    method: Method,
+    handler: MethodRouter,
+}
+pub trait CustomDisplay {
+    fn concise_display(&self) -> String;
+}
+impl CustomDisplay for Endpoint {
+    fn concise_display(&self) -> String {
+        format!("{} {}", self.method.as_str(), self.path)
+    }
+}
 
 /// Explicitly list all routes in a map that is used to generate
 /// the real router as well as documentation.
-pub fn get_endpoint_map() -> HashMap<&'static str, MethodRouter> {
-    let mut endpoints = HashMap::new();
-
-    // Generic
-    endpoints.insert("/", get(root));
-    endpoints.insert("/api/health", get(health));
-    endpoints.insert("/api/endpoints", get(list_endpoints));
-
-    // Pipelines
-    endpoints.insert("/api/pipelines", get(list_pipelines));
-    endpoints.insert("/api/pipelines", post(create_pipelines));
-
-    endpoints
+pub fn get_endpoints() -> Vec<Endpoint> {
+    vec![
+        Endpoint {
+            path: "/",
+            method: Method::GET,
+            handler: get(root),
+        },
+        Endpoint {
+            path: "/api/health",
+            method: Method::GET,
+            handler: get(health),
+        },
+        Endpoint {
+            path: "/api/endpoints",
+            method: Method::GET,
+            handler: get(list_endpoints),
+        },
+        Endpoint {
+            path: "/api/pipelines",
+            method: Method::GET,
+            handler: get(list_pipelines),
+        },
+        Endpoint {
+            path: "/api/pipelines",
+            method: Method::POST,
+            handler: post(create_pipeline),
+        },
+    ]
 }
 
 /// Automatically generate a router based off of the endpoint map
 pub fn create_pipeline_router() -> Router {
     let mut router = Router::new();
 
-    for (path, handler) in get_endpoint_map() {
-        router = router.route(path, handler);
+    for endpoint in get_endpoints() {
+        router = router.route(endpoint.path, endpoint.handler);
     }
     router
 }
@@ -45,17 +78,37 @@ async fn health() -> Json<Value> {
 
 /// Show all of the available routes for the server
 async fn list_endpoints() -> Json<Value> {
-    let paths: Vec<&str> = get_endpoint_map().keys().cloned().collect();
+    let endpoints: Vec<String> = get_endpoints()
+        .iter()
+        .map(|endpoint| endpoint.concise_display())
+        .collect();
 
-    Json(json!({"endpoint_paths": paths}))
+    Json(json!({"endpoint_paths": endpoints}))
 }
 
 /// Return a list of all pipelines
 async fn list_pipelines() -> Response {
-    todo!()
+    let mut db = database::get_db_connection().await.unwrap();
+    let pipelines = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines")
+        .fetch_all(&mut db)
+        .await
+        .unwrap();
+
+    (StatusCode::OK, Json(json!({ "data": pipelines}))).into_response()
 }
 
 /// Return a list of all pipelines
-async fn create_pipelines() -> Response {
-    todo!()
+async fn create_pipeline(extract::Json(payload): extract::Json<Pipeline>) -> Response {
+    let mut db = database::get_db_connection().await.unwrap();
+    sqlx::query!(
+        "INSERT INTO pipelines VALUES(?, ?, ?)",
+        payload.id,
+        payload.name,
+        payload.schedule,
+    )
+    .execute(&mut db)
+    .await
+    .unwrap();
+
+    (StatusCode::CREATED, Json(json!({ "data": payload }))).into_response()
 }
