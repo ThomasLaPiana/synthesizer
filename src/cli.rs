@@ -1,6 +1,7 @@
 use crate::models::Pipelines;
 use clap::{crate_version, Arg, Command};
-use reqwest;
+use reqwest::blocking::Client;
+use serde_json::json;
 
 /// Construct the CLI
 pub fn cli_builder() -> Command {
@@ -42,5 +43,9 @@ pub fn cli_builder() -> Command {
 
 /// Send the manifest to the server
 pub fn register(url: &str, manifest: Pipelines) -> bool {
-    todo!()
+    let json_data = json!(manifest);
+    let client = Client::new();
+    let res = client.post(url).json(&json_data).send().unwrap();
+    println!("{:?}", res.status());
+    true
 }

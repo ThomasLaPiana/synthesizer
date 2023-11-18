@@ -3,13 +3,8 @@ use axum::Router;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
-/// Run all server setup logic and start the server
-#[tokio::main(flavor = "current_thread")]
-async fn start() -> anyhow::Result<()> {
-    println!("> Checking Database...");
-
-    // TODO: Use connection pooling
-
+/// Create the full Application
+pub fn create_app() -> Router {
     // Set tracing for logs
     tracing_subscriber::fmt()
         .with_target(false)
@@ -25,8 +20,16 @@ async fn start() -> anyhow::Result<()> {
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
         );
 
-    let app = Router::new().merge(pipeline_api);
+    Router::new().merge(pipeline_api)
+}
 
+/// Run all server setup logic and start the server
+#[tokio::main(flavor = "current_thread")]
+async fn start() -> anyhow::Result<()> {
+    println!("> Checking Database...");
+    // TODO: Use connection pooling
+
+    let app = create_app();
     let server_address = "127.0.0.1:8080";
     println!("> Starting server at address 'http://{server_address}'...");
     axum::Server::bind(&server_address.parse().unwrap())

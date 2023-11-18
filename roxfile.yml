@@ -1,3 +1,8 @@
+templates:
+  - name: sqlx
+    command: sqlx {commands} -D sqlite://synthesizer.sqlite?mode=rwc
+    symbols: ["{commands}"]
+
 tasks:
   # --- Frontend --- #
   - name: tailwind
@@ -7,20 +12,27 @@ tasks:
   # --- Database --- #
   - name: dropdb
     description: "Destroy the application database"
-    command: sqlx database drop -y
+    uses: sqlx
+    values: ["database drop -y"]
 
   - name: createdb
     description: "Create the database"
-    command: "sqlx database create"
+    uses: sqlx
+    values: ["database create"]
 
   - name: migratedb
     description: "Migrate the database"
-    command: "sqlx migrate run --source src/migrations"
+    uses: sqlx
+    values: ["migrate run --source src/migrations"]
 
   # --- Dev --- #
   - name: wc
-    description: "Watch the webserver files and reload on changes"
-    command: "cargo watch -c -x check"
+    description: "Watch the webserver files and compile check on changes"
+    command: cargo watch -c -x check
+
+  - name: wt
+    description: "Watch the src files and test on changes"
+    command: cargo watch -c -x test
 
   - name: check
     command: "cargo check"

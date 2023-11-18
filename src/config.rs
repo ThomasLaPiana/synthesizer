@@ -9,8 +9,17 @@ pub struct Config {
 
 #[derive(Deserialize, Debug)]
 pub struct Server {
+    pub scheme: String,
     pub host: String,
     pub port: u32,
+}
+pub trait BuildUrl {
+    fn build_url(&self) -> String;
+}
+impl BuildUrl for Server {
+    fn build_url(&self) -> String {
+        format!("{}://{}:{}", self.scheme, self.host, self.port)
+    }
 }
 
 #[derive(Deserialize, Debug)]
