@@ -1,0 +1,68 @@
+templates:
+  - name: sqlx
+    command: sqlx {commands} -D sqlite://synthesizer.sqlite?mode=rwc
+    symbols: ["{commands}"]
+
+tasks:
+  # --- Frontend --- #
+  - name: tailwind
+    description: "Run tailwind in 'watch' mode"
+    command: "pnpm dlx tailwindcss -i styles/tailwind.css -o assets/main.css --watch"
+
+  # --- Database --- #
+  - name: dropdb
+    description: "Destroy the application database"
+    uses: sqlx
+    values: ["database drop -y"]
+
+  - name: createdb
+    description: "Create the database"
+    uses: sqlx
+    values: ["database create"]
+
+  - name: migratedb
+    description: "Migrate the database"
+    uses: sqlx
+    values: ["migrate run --source src/migrations"]
+
+  # --- Dev --- #
+  - name: wc
+    description: "Watch the webserver files and compile check on changes"
+    command: cargo watch -c -x check
+
+  - name: wt
+    description: "Watch the src files and test on changes"
+    command: cargo watch -c -x test
+
+  - name: check
+    command: "cargo check"
+    description: "'cargo check'"
+
+  - name: fmt
+    command: "cargo fmt"
+    description: "'cargo fmt'"
+
+  - name: test
+    description: "Run tests"
+    command: cargo nextest run -j 1 --retries 2
+
+  - name: clippy
+    command: "cargo clippy -- -D warnings"
+    description: "Run Clippy in CI mode"
+
+  # --- Application CLI Commands --- #
+  - name: register
+    command: "cargo run register -f data/pipelines.yml"
+
+pipelines:
+  - name: setupdb
+    description: "Create and migrate the database"
+    stages:
+      - [dropdb]
+      - [createdb]
+      - [migratedb]
+
+  - name: ci
+    description: "Run the suite of CI checks, including linting and tests"
+    stages:
+      - ["check", "fmt", "test", "clippy"]

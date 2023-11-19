@@ -1,0 +1,13 @@
+pipelines:
+  - id: pipeline1
+    name: Pipeline 1
+    schedule: "1 * * * *"
+
+tasks:
+  - name: task1
+    pipeline_id: pipeline1
+    command: echo "task1"
+
+  - name: task2
+    pipeline_id: pipeline1
+    command: echo "task1"
