@@ -1,5 +1,6 @@
 use crate::api::endpoints;
 use axum::Router;
+use tokio;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
@@ -23,11 +24,25 @@ pub fn create_app() -> Router {
     Router::new().merge(pipeline_api)
 }
 
+async fn scheduler() {
+    loop {
+        // sleep
+        let sleep_duration = tokio::time::Duration::from_secs(2);
+        tokio::time::sleep(sleep_duration).await;
+        println!("Hello from the scheduler!");
+    }
+}
+
 /// Run all server setup logic and start the server
 #[tokio::main(flavor = "current_thread")]
 async fn start() -> anyhow::Result<()> {
     println!("> Checking Database...");
     // TODO: Use connection pooling
+
+    // Spawn a thread for the Scheduler
+    tokio::spawn(async {
+        scheduler().await;
+    });
 
     let app = create_app();
     let server_address = "127.0.0.1:8080";
