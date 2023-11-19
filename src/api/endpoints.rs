@@ -1,5 +1,5 @@
 use crate::database;
-use crate::models::Pipeline;
+use crate::models::{Pipeline, Task};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, method_routing::MethodRouter, post};
 use axum::{extract, Json, Router};
@@ -26,6 +26,7 @@ impl CustomDisplay for Endpoint {
 /// the real router as well as documentation.
 pub fn get_endpoints() -> Vec<Endpoint> {
     vec![
+        // Generic
         Endpoint {
             path: "/",
             method: Method::GET,
@@ -41,6 +42,7 @@ pub fn get_endpoints() -> Vec<Endpoint> {
             method: Method::GET,
             handler: get(list_endpoints),
         },
+        // Pipelines
         Endpoint {
             path: "/api/pipelines",
             method: Method::GET,
@@ -49,13 +51,24 @@ pub fn get_endpoints() -> Vec<Endpoint> {
         Endpoint {
             path: "/api/pipelines",
             method: Method::POST,
-            handler: post(create_pipeline),
+            handler: post(create_pipelines),
+        },
+        // Tasks
+        Endpoint {
+            path: "/api/tasks",
+            method: Method::GET,
+            handler: get(list_tasks),
+        },
+        Endpoint {
+            path: "/api/tasks",
+            method: Method::POST,
+            handler: post(create_tasks),
         },
     ]
 }
 
 /// Automatically generate a router based off of the endpoint map
-pub fn create_pipeline_router() -> Router {
+pub fn create_api_router() -> Router {
     let mut router = Router::new();
 
     for endpoint in get_endpoints() {
@@ -97,18 +110,49 @@ async fn list_pipelines() -> Response {
     (StatusCode::OK, Json(json!({ "data": pipelines}))).into_response()
 }
 
-/// Return a list of all pipelines
-async fn create_pipeline(extract::Json(payload): extract::Json<Pipeline>) -> Response {
+/// Create Pipeline(s)
+async fn create_pipelines(extract::Json(payload): extract::Json<Vec<Pipeline>>) -> Response {
     let mut db = database::get_db_connection().await.unwrap();
-    sqlx::query!(
-        "INSERT INTO pipelines VALUES(?, ?, ?)",
-        payload.id,
-        payload.name,
-        payload.schedule,
-    )
-    .execute(&mut db)
-    .await
-    .unwrap();
+    for pipeline in &payload {
+        sqlx::query!(
+            "INSERT INTO pipelines VALUES(?, ?, ?)",
+            pipeline.id,
+            pipeline.name,
+            pipeline.schedule,
+        )
+        .execute(&mut db)
+        .await
+        .unwrap();
+    }
+
+    (StatusCode::CREATED, Json(json!({ "data": payload }))).into_response()
+}
+
+/// Return a list of all tasks
+async fn list_tasks() -> Response {
+    let mut db = database::get_db_connection().await.unwrap();
+    let pipelines = sqlx::query_as!(Task, "SELECT * FROM tasks")
+        .fetch_all(&mut db)
+        .await
+        .unwrap();
+
+    (StatusCode::OK, Json(json!({ "data": pipelines}))).into_response()
+}
+
+/// Create Task(s)
+async fn create_tasks(extract::Json(payload): extract::Json<Vec<Task>>) -> Response {
+    let mut db = database::get_db_connection().await.unwrap();
+    for task in &payload {
+        sqlx::query!(
+            "INSERT INTO tasks VALUES(?, ?, ?)",
+            task.name,
+            task.pipeline_id,
+            task.command,
+        )
+        .execute(&mut db)
+        .await
+        .unwrap();
+    }
 
     (StatusCode::CREATED, Json(json!({ "data": payload }))).into_response()
 }

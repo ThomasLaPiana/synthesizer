@@ -1,5 +1,6 @@
 pub mod api;
 pub mod cli;
+pub mod commands;
 pub mod config;
 pub mod database;
 pub mod manifests;
@@ -17,12 +18,11 @@ pub fn synthesizer() {
 
     match cli.subcommand() {
         Some(("server", _)) => api::webserver::start_webserver(),
-        Some(("check", _)) => {
-            let pipelines =
-                manifests::parse_manifest_file(utils::load_file("./data/pipelines.yaml"));
+        Some(("check", sub_matches)) => {
+            let manifest = commands::check(sub_matches);
             println!(
                 "> Successfully parsed {} pipeline(s)!",
-                pipelines.pipelines.len()
+                manifest.pipelines.len()
             )
         }
         Some(("config", _)) => println!("> Config Values:\n{:#?}", config),
@@ -32,9 +32,7 @@ pub fn synthesizer() {
             }
         }
         Some(("register", sub_matches)) => {
-            let filepath = sub_matches.get_one::<String>("filepath").unwrap();
-            let raw_manifest = utils::load_file(filepath);
-            let manifest = manifests::parse_manifest_file(raw_manifest);
+            let manifest = commands::check(sub_matches);
             cli::register(&server_url, manifest);
         }
         _ => unreachable!("'subcommand_required' prevents 'None'"),

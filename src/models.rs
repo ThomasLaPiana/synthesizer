@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Task {
-    pub pipeline_id: String,
     pub name: String,
+    pub pipeline_id: String,
     pub command: String,
 }
 
@@ -15,6 +15,7 @@ pub struct Pipeline {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-pub struct Pipelines {
+pub struct Manifest {
     pub pipelines: Vec<Pipeline>,
+    pub tasks: Vec<Task>,
 }

@@ -4,8 +4,9 @@ pub fn load_file(file_path: &str) -> String {
         Ok(result) => result,
         Err(result) => {
             println!(
-                "> Failed to load file '{}' with error: {:?}",
-                file_path, result
+                "> Failed to load file '{}' with error: {:#?}",
+                file_path,
+                result.to_string()
             );
             std::process::exit(2)
         }

@@ -12,7 +12,7 @@ pub fn create_app() -> Router {
         .init();
 
     println!("> Building Router(s)...");
-    let pipeline_api = endpoints::create_pipeline_router()
+    let pipeline_api = endpoints::create_api_router()
         // Add Logging
         .layer(
             TraceLayer::new_for_http()
