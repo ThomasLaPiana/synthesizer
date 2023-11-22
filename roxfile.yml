@@ -50,6 +50,10 @@ tasks:
     command: "cargo clippy -- -D warnings"
     description: "Run Clippy in CI mode"
 
+  - name: audit
+    command: cargo audit
+    description: Security audit of crate dependencies
+
   # --- Application CLI Commands --- #
   - name: register
     command: "cargo run register -f data/pipelines.yml"

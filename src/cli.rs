@@ -9,7 +9,7 @@ pub fn cli_builder() -> Command {
     let manifest_filepath = Arg::new("filepath")
         .long("file")
         .short('f')
-        .default_value("./data/synth_manifest.yaml")
+        .default_value("./data/synth_manifest.yml")
         .help("Path to a Synthesizer Pipelines manifest file.");
 
     Command::new("Synthesizer")
