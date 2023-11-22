@@ -101,8 +101,7 @@ async fn create_pipeline(pipeline: web::Json<Pipeline>) -> HttpResponse {
     .await
     .unwrap();
 
-    let json_data = json!({"data": pipeline});
-    HttpResponse::Created().json(web::Json(json_data))
+    HttpResponse::Created().json(web::Json(pipeline))
 }
 
 /// Return a list of all tasks
@@ -122,16 +121,15 @@ async fn create_task(task: web::Json<Task>) -> HttpResponse {
     let mut db = database::get_db_connection().await.unwrap();
     sqlx::query!(
         "INSERT INTO tasks VALUES(?, ?, ?)",
-        task.name,
         task.pipeline_id,
+        task.name,
         task.command,
     )
     .execute(&mut db)
     .await
     .unwrap();
 
-    let json_data = json!({"data": task});
-    HttpResponse::Created().json(web::Json(json_data))
+    HttpResponse::Created().json(web::Json(task))
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, anyhow::Error> {

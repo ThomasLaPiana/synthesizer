@@ -1,18 +1,23 @@
 use std::net::TcpListener;
 
-use reqwest;
-use serde_json::{json, Value};
-use synthesizer::{database, webserver};
+use reqwest::{Client, StatusCode};
+use synthesizer::{database, models, webserver};
 
 pub async fn setupdb() {
     database::reset_database().await.unwrap();
     database::run_migrations().await.unwrap();
 }
 
-pub fn spawn_app() {
+/// Spawn an application instance on a random, available
+/// port and return the address. The application instance
+/// will automatically be destroyed and cleaned when the
+/// process ends.
+pub fn spawn_app() -> String {
     let listener =
         TcpListener::bind("127.0.0.1:0").expect("Failed to bind to a random, available port!");
     let port = listener.local_addr().unwrap().port();
+    let _ = tokio::spawn(webserver::run(listener).unwrap());
+    format!("http://127.0.0.1:{}", port)
 }
 
 mod generic {
@@ -21,40 +26,38 @@ mod generic {
 
     #[tokio::test]
     async fn health_success() {
-        let app = api::endpoints::create_api_router();
+        // Arrange
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/health", server_address);
 
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/health")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+        // Act
+        let response = client
+            .get(url)
+            .send()
             .await
-            .unwrap();
+            .expect("Failed to send request!");
 
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-        let body: Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(body, json!({ "data": "Feeling healthy!" }));
+        // Assert
+        assert_eq!(response.status(), StatusCode::OK)
     }
 
     #[tokio::test]
     async fn get_endpoints() {
-        let app = api::endpoints::create_api_router();
+        // Arrange
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/endpoints", server_address);
 
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/endpoints")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+        // Act
+        let response = client
+            .get(url)
+            .send()
             .await
-            .unwrap();
+            .expect("Failed to send request!");
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // Assert
+        assert_eq!(response.status(), StatusCode::OK)
     }
 }
 
@@ -64,93 +67,51 @@ mod pipelines {
 
     #[tokio::test]
     async fn list_pipelines_success() {
-        let app = api::endpoints::create_api_router();
+        // Arrange
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/pipelines", server_address);
 
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/pipelines")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+        // Act
+        let response = client
+            .get(url)
+            .send()
             .await
-            .unwrap();
+            .expect("Failed to send request!");
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // Assert
+        assert_eq!(response.status(), StatusCode::OK)
     }
 
     #[tokio::test]
     async fn create_one_pipeline_success() {
-        let app = api::endpoints::create_api_router();
+        // Arrange
         setupdb().await;
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/pipelines", server_address);
+        let request_data = models::Pipeline {
+            name: Some("testpipeline".to_owned()),
+            id: "testpipeline".to_owned(),
+            schedule: "1 * * * *".to_owned(),
+        };
 
-        // Build the request
-        let request = Request::builder()
-            .method(http::Method::POST)
-            .uri("/api/pipelines")
-            .header("content-type", "application/json")
-            // TODO: Switch the id to a UUID to prevent test collisions
-            .body(Body::from(
-                r#"[{"id": "testpipeline", "name": "Test Pipeline", "schedule": "1 * * * *"}]"#,
-            ))
-            .unwrap();
+        // Act
+        let response = client
+            .post(url)
+            .json(&request_data)
+            .send()
+            .await
+            .expect("Failed to send request!");
 
-        // Send the request and get the response
-        let response = app.oneshot(request).await.unwrap();
+        // Assert
+        assert_eq!(response.status(), StatusCode::CREATED);
 
-        // Load the status and body as bytes for use in assertions
-        let status = response.status();
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-
-        assert_eq!(
-            status,
-            StatusCode::CREATED,
-            "Assertion Failed due to: {:?}",
-            String::from_utf8(body.to_vec()).unwrap()
-        );
-
-        let body: Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(
-            body,
-            json!({ "data": [{"id": "testpipeline", "name": "Test Pipeline", "schedule": "1 * * * *"}] })
-        );
-    }
-
-    #[tokio::test]
-    async fn create_multi_pipeline_success() {
-        let app = api::endpoints::create_api_router();
-        setupdb().await;
-
-        // Build the request
-        let request = Request::builder()
-        .method(http::Method::POST)
-        .uri("/api/pipelines")
-        .header("content-type", "application/json")
-        // TODO: Switch the id to a UUID to prevent test collisions
-        .body(Body::from(
-            r#"[{"id": "testpipeline", "name": "Test Pipeline", "schedule": "1 * * * *"},{"id": "testpipeline2", "name": "Test Pipeline 2", "schedule": "1 * * * *"}]"#,
-        ))
-        .unwrap();
-
-        // Send the request and get the response
-        let response = app.oneshot(request).await.unwrap();
-
-        // Load the status and body as bytes for use in assertions
-        let status = response.status();
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-
-        assert_eq!(
-            status,
-            StatusCode::CREATED,
-            "Assertion Failed due to: {:?}",
-            String::from_utf8(body.to_vec()).unwrap()
-        );
-
-        let body: Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(
-            body,
-            json!({ "data": [{"id": "testpipeline", "name": "Test Pipeline", "schedule": "1 * * * *"},{"id": "testpipeline2", "name": "Test Pipeline 2", "schedule": "1 * * * *"}] })
-        );
+        let body: models::Pipeline = response
+            .json()
+            .await
+            .expect("Failed to parse the create pipeline response!");
+        assert_eq!(body, request_data);
     }
 }
 
@@ -160,91 +121,47 @@ mod tasks {
 
     #[tokio::test]
     async fn create_one_task_success() {
-        let app = api::endpoints::create_api_router();
+        // Arrange
         setupdb().await;
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/tasks", server_address);
+        let request_data = models::Task {
+            name: "testtask".to_owned(),
+            pipeline_id: "testpipeline".to_owned(),
+            command: "1 * * * *".to_owned(),
+        };
 
-        // Build the request
-        let request = Request::builder()
-            .method(http::Method::POST)
-            .uri("/api/tasks")
-            .header("content-type", "application/json")
-            // TODO: Switch the id to a UUID to prevent test collisions
-            .body(Body::from(
-                r#"[{"name": "testtask", "pipeline_id": "testpipeline", "command": "echo 1"}]"#,
-            ))
-            .unwrap();
+        // Act
+        let response = client
+            .post(url)
+            .json(&request_data)
+            .send()
+            .await
+            .expect("Failed to send request!");
 
-        // Send the request and get the response
-        let response = app.oneshot(request).await.unwrap();
+        // Assert
+        assert_eq!(response.status(), StatusCode::CREATED);
 
-        // Load the status and body as bytes for use in assertions
-        let status = response.status();
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-
-        assert_eq!(
-            status,
-            StatusCode::CREATED,
-            "Assertion Failed due to: {:?}",
-            String::from_utf8(body.to_vec()).unwrap()
-        );
-
-        let body: Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(
-            body,
-            json!({ "data": [{"name": "testtask", "pipeline_id": "testpipeline", "command": "echo 1"}] })
-        );
-    }
-
-    #[tokio::test]
-    async fn create_multi_task_success() {
-        let app = api::endpoints::create_api_router();
-        setupdb().await;
-
-        // Build the request
-        let request = Request::builder()
-        .method(http::Method::POST)
-        .uri("/api/tasks")
-        .header("content-type", "application/json")
-        .body(Body::from(
-            r#"[{"name": "testtask2", "pipeline_id": "testpipeline", "command": "echo 1"},{"name": "testtask3", "pipeline_id": "testpipeline", "command": "echo 2"}]"#,
-        ))
-        .unwrap();
-
-        // Send the request and get the response
-        let response = app.oneshot(request).await.unwrap();
-
-        // Load the status and body as bytes for use in assertions
-        let status = response.status();
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-
-        assert_eq!(
-            status,
-            StatusCode::CREATED,
-            "Assertion Failed due to: {:?}",
-            String::from_utf8(body.to_vec()).unwrap()
-        );
-
-        let body: Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(
-            body,
-            json!({ "data": [{"name": "testtask2", "pipeline_id": "testpipeline", "command": "echo 1"},{"name": "testtask3", "pipeline_id": "testpipeline", "command": "echo 2"}] })
-        );
+        let body: models::Task = response.json().await.unwrap();
+        assert_eq!(body, request_data);
     }
 
     #[tokio::test]
     async fn list_tasks_success() {
-        let app = api::endpoints::create_api_router();
+        // Arrange
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/tasks", server_address);
 
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/tasks")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+        // Act
+        let response = client
+            .get(url)
+            .send()
             .await
-            .unwrap();
+            .expect("Failed to send request!");
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // Assert
+        assert_eq!(response.status(), StatusCode::OK)
     }
 }

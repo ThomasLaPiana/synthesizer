@@ -23,8 +23,8 @@ VALUES(
 -- Create Tasks table and seed data --
 --------------------------------------
 CREATE TABLE IF NOT EXISTS tasks (
-    name TEXT NOT NULL UNIQUE,
     pipeline_id TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     command TEXT NOT NULL
 );
 -- Seed Tasks data

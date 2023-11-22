@@ -17,10 +17,12 @@ pub async fn synthesizer() {
     let config_path = cli.get_one::<String>("config-path").unwrap();
     let config = config::load_config(config_path);
     let server_url = config.server.build_url();
-    let listener = TcpListener::bind("127.0.0.1:8080").expect("Failed to bind port!");
 
     match cli.subcommand() {
         Some(("server", _)) => {
+            let server_address = "127.0.0.1:8080";
+            let listener = TcpListener::bind(server_address).expect("Failed to bind port!");
+            println!("> Starting the webserver at address: {}", server_address);
             webserver::run(listener).unwrap().await.unwrap();
         }
         Some(("check", sub_matches)) => {
