@@ -1,15 +1,18 @@
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
-};
-use hyper::http;
+use std::net::TcpListener;
+
+use reqwest;
 use serde_json::{json, Value};
-use synthesizer::{api, database};
-use tower::ServiceExt; // for `oneshot` and `ready`
+use synthesizer::{database, webserver};
 
 pub async fn setupdb() {
     database::reset_database().await.unwrap();
     database::run_migrations().await.unwrap();
+}
+
+pub fn spawn_app() {
+    let listener =
+        TcpListener::bind("127.0.0.1:0").expect("Failed to bind to a random, available port!");
+    let port = listener.local_addr().unwrap().port();
 }
 
 mod generic {
