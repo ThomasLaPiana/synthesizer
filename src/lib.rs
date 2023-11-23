@@ -7,6 +7,7 @@ pub mod models;
 pub mod utils;
 pub mod webserver;
 
+use sqlx::SqlitePool;
 use std::net::TcpListener;
 
 use crate::config::BuildUrl;
@@ -20,10 +21,18 @@ pub async fn synthesizer() {
 
     match cli.subcommand() {
         Some(("server", _)) => {
+            // Init the db pool
+            let db_pool = SqlitePool::connect(&config.database.url)
+                .await
+                .expect("Failed to create the database pool!");
+
+            // Prepare values to configure the server
             let server_address = "127.0.0.1:8080";
             let listener = TcpListener::bind(server_address).expect("Failed to bind port!");
+
+            // Run the server
             println!("> Starting the webserver at address: {}", server_address);
-            webserver::run(listener).unwrap().await.unwrap();
+            webserver::run(listener, db_pool).unwrap().await.unwrap();
         }
         Some(("check", sub_matches)) => {
             let manifest = commands::check(sub_matches);

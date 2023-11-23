@@ -1,7 +1,8 @@
 use std::net::TcpListener;
 
 use reqwest::{Client, StatusCode};
-use synthesizer::{database, models, webserver};
+use sqlx::SqlitePool;
+use synthesizer::{config, database, models, webserver};
 
 pub async fn setupdb() {
     database::reset_database().await.unwrap();
@@ -12,11 +13,15 @@ pub async fn setupdb() {
 /// port and return the address. The application instance
 /// will automatically be destroyed and cleaned when the
 /// process ends.
-pub fn spawn_app() -> String {
+pub async fn spawn_app() -> String {
+    let config = config::load_config("synth.toml").expect("Failed to load configuration!");
     let listener =
         TcpListener::bind("127.0.0.1:0").expect("Failed to bind to a random, available port!");
     let port = listener.local_addr().unwrap().port();
-    let _ = tokio::spawn(webserver::run(listener).unwrap());
+    let db_pool = SqlitePool::connect(&config.database.url)
+        .await
+        .expect("Failed to create the database pool!");
+    let _ = tokio::spawn(webserver::run(listener, db_pool).unwrap());
     format!("http://127.0.0.1:{}", port)
 }
 
@@ -27,7 +32,7 @@ mod generic {
     #[tokio::test]
     async fn health_success() {
         // Arrange
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/health", server_address);
 
@@ -45,7 +50,7 @@ mod generic {
     #[tokio::test]
     async fn get_endpoints() {
         // Arrange
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/endpoints", server_address);
 
@@ -68,7 +73,7 @@ mod pipelines {
     #[tokio::test]
     async fn list_pipelines_success() {
         // Arrange
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/pipelines", server_address);
 
@@ -87,7 +92,7 @@ mod pipelines {
     async fn create_one_pipeline_success() {
         // Arrange
         setupdb().await;
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/pipelines", server_address);
         let request_data = models::Pipeline {
@@ -118,7 +123,7 @@ mod pipelines {
     async fn create_pipeline_failures() {
         // Arrange
         setupdb().await;
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/pipelines", server_address);
         let request_data = vec![
@@ -154,7 +159,7 @@ mod tasks {
     async fn create_one_task_success() {
         // Arrange
         setupdb().await;
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/tasks", server_address);
         let request_data = models::Task {
@@ -182,7 +187,7 @@ mod tasks {
     async fn create_task_failures() {
         // Arrange
         setupdb().await;
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/tasks", server_address);
         let request_data = vec![
@@ -212,7 +217,7 @@ mod tasks {
     #[tokio::test]
     async fn list_tasks_success() {
         // Arrange
-        let server_address = spawn_app();
+        let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/tasks", server_address);
 
