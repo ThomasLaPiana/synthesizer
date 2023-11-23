@@ -113,6 +113,37 @@ mod pipelines {
             .expect("Failed to parse the create pipeline response!");
         assert_eq!(body, request_data);
     }
+
+    #[tokio::test]
+    async fn create_pipeline_failures() {
+        // Arrange
+        setupdb().await;
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/pipelines", server_address);
+        let request_data = vec![
+            r#"{"id": "testpipline", "scheduled": "1 * * * *"}"#,
+            r#"{"name": "whew", "id": "whewpipeline}"#,
+        ];
+
+        for pipeline in request_data {
+            // Act
+            let response = client
+                .post(url)
+                .json(&pipeline)
+                .send()
+                .await
+                .expect("Failed to send request!");
+
+            // Assert
+            assert_eq!(
+                response.status(),
+                StatusCode::BAD_REQUEST,
+                "Didn't get a 400 with payload: {}",
+                pipeline
+            );
+        }
+    }
 }
 
 mod tasks {
@@ -145,6 +176,37 @@ mod tasks {
 
         let body: models::Task = response.json().await.unwrap();
         assert_eq!(body, request_data);
+    }
+
+    #[tokio::test]
+    async fn create_task_failures() {
+        // Arrange
+        setupdb().await;
+        let server_address = spawn_app();
+        let client = Client::new();
+        let url = &format!("{}/api/tasks", server_address);
+        let request_data = vec![
+            r#"{"name": "testpipline", "command": "1 * * * *", "pipeline_id": 4}"#,
+            r#"{"name": "whew", "pipeline_id": "whewpipeline}"#,
+        ];
+
+        for data in request_data {
+            // Act
+            let response = client
+                .post(url)
+                .json(&data)
+                .send()
+                .await
+                .expect("Failed to send request!");
+
+            // Assert
+            assert_eq!(
+                response.status(),
+                StatusCode::BAD_REQUEST,
+                "Didn't get a 400 with payload: {}",
+                data
+            );
+        }
     }
 
     #[tokio::test]
