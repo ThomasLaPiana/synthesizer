@@ -1,14 +1,25 @@
-use crate::utils;
+use config::{Config, Environment, File};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub struct Config {
-    pub server: Server,
-    pub pipelines: Pipelines,
+pub struct Settings {
+    pub server: ServerSettings,
+    pub pipelines: PipelineSettings,
+    pub database: DatabaseSettings,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Server {
+pub struct DatabaseSettings {
+    pub url: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct PipelineSettings {
+    pub dirs: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ServerSettings {
     pub scheme: String,
     pub host: String,
     pub port: u32,
@@ -16,20 +27,16 @@ pub struct Server {
 pub trait BuildUrl {
     fn build_url(&self) -> String;
 }
-impl BuildUrl for Server {
+impl BuildUrl for ServerSettings {
     fn build_url(&self) -> String {
         format!("{}://{}:{}", self.scheme, self.host, self.port)
     }
 }
 
-#[derive(Deserialize, Debug)]
-pub struct Pipelines {
-    pub dirs: Vec<String>,
-}
-
-pub fn load_config(filepath: &str) -> Config {
-    let raw_file = utils::load_file(filepath);
-    // TODO: Check that file parses correctly instead of unwrapping
-    let config: Config = toml::from_str(&raw_file).unwrap();
-    config
+pub fn load_config(filepath: &str) -> Result<Settings, config::ConfigError> {
+    Config::builder()
+        .add_source(File::with_name(filepath))
+        .add_source(Environment::default().prefix("SYNTH"))
+        .build()?
+        .try_deserialize::<Settings>()
 }

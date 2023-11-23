@@ -5,3 +5,6 @@ port = 8080
 
 [pipelines]
 dirs = ["data"]
+
+[database]
+url = 'sqlite://synthesizer.sqlite?mode=rwc'

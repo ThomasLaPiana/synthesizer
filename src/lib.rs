@@ -15,7 +15,7 @@ pub async fn synthesizer() {
     // Parse and validate the CLI
     let cli = cli::cli_builder().get_matches();
     let config_path = cli.get_one::<String>("config-path").unwrap();
-    let config = config::load_config(config_path);
+    let config = config::load_config(config_path).expect("Failed to load the config!");
     let server_url = config.server.build_url();
 
     match cli.subcommand() {
