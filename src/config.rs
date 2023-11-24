@@ -1,6 +1,11 @@
 use config::{Config, Environment, File};
 use serde::Deserialize;
 
+/// Trait used to build URLs for various resources
+pub trait BuildUrl {
+    fn build_url(&self) -> String;
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Settings {
     pub server: ServerSettings,
@@ -10,7 +15,12 @@ pub struct Settings {
 
 #[derive(Deserialize, Debug)]
 pub struct DatabaseSettings {
-    pub url: String,
+    pub database: String,
+}
+impl BuildUrl for DatabaseSettings {
+    fn build_url(&self) -> String {
+        format!("sqlite://{}.sqlite?mode=rwc", self.database)
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -23,9 +33,6 @@ pub struct ServerSettings {
     pub scheme: String,
     pub host: String,
     pub port: u32,
-}
-pub trait BuildUrl {
-    fn build_url(&self) -> String;
 }
 impl BuildUrl for ServerSettings {
     fn build_url(&self) -> String {

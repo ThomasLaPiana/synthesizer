@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq, Clone)]
 pub struct Task {
-    pub name: String,
+    pub id: String,
     pub pipeline_id: String,
     pub command: String,
 }
@@ -10,7 +10,6 @@ pub struct Task {
 #[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct Pipeline {
     pub id: String,
-    pub name: Option<String>,
     pub schedule: String,
 }
 

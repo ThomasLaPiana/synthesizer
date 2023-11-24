@@ -38,6 +38,9 @@ tasks:
     command: "cargo check"
     description: "'cargo check'"
 
+  - name: build
+    command: "cargo check"
+
   - name: fmt
     command: "cargo fmt"
     description: "'cargo fmt'"

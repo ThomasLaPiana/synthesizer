@@ -1,6 +1,7 @@
 use crate::models::{Pipeline, Task};
-use serde_json::json;
+use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use std::fmt;
 use std::net::TcpListener;
 
 use actix_web::dev::Server;
@@ -12,15 +13,17 @@ pub struct Endpoint {
     method: Method,
     route: Route,
 }
-
-pub trait CustomDisplay {
-    fn concise_display(&self) -> String;
-}
-/// TODO: Rename to Display and implement as the standard trait
-impl CustomDisplay for Endpoint {
-    fn concise_display(&self) -> String {
-        format!("{} {}", self.method.as_str(), self.path)
+impl fmt::Display for Endpoint {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {}", self.method.as_str(), self.path)
     }
+}
+
+/// Generic Struct used for API Responses
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
+pub struct JSONResponse<T> {
+    pub data: Option<Vec<T>>,
+    pub errors: Option<Vec<String>>,
 }
 
 /// Explicitly list all routes in the application.
@@ -46,6 +49,11 @@ pub fn get_endpoints() -> Vec<Endpoint> {
             route: web::get().to(list_pipelines),
         },
         Endpoint {
+            path: "/api/pipelines/{id}",
+            method: Method::GET,
+            route: web::get().to(get_pipeline),
+        },
+        Endpoint {
             path: "/api/pipelines",
             method: Method::POST,
             route: web::post().to(create_pipeline),
@@ -61,23 +69,35 @@ pub fn get_endpoints() -> Vec<Endpoint> {
             method: Method::POST,
             route: web::post().to(create_task),
         },
+        Endpoint {
+            path: "/api/tasks/{id}",
+            method: Method::GET,
+            route: web::get().to(get_task),
+        },
     ]
 }
 
 /// Standard health endpoint
 async fn health() -> HttpResponse {
-    HttpResponse::Ok().finish()
+    let response_data = JSONResponse::<String> {
+        data: Some(vec!["Feeling healthy!".to_string()]),
+        errors: None,
+    };
+    HttpResponse::Ok().json(response_data)
 }
 
 /// Show all of the available routes for the server
 async fn list_endpoints() -> HttpResponse {
     let endpoints: Vec<String> = get_endpoints()
         .iter()
-        .map(|endpoint| endpoint.concise_display())
+        .map(|endpoint| endpoint.to_string())
         .collect();
 
-    let json_data = json!({"endpoint_paths": endpoints});
-    HttpResponse::Ok().json(web::Json(json_data))
+    let response_data = JSONResponse::<String> {
+        data: Some(endpoints),
+        errors: None,
+    };
+    HttpResponse::Ok().json(response_data)
 }
 
 /// Return a list of all pipelines
@@ -87,8 +107,26 @@ async fn list_pipelines(db_pool: web::Data<SqlitePool>) -> HttpResponse {
         .await
         .unwrap();
 
-    let json_data = json!({"data": pipelines});
-    HttpResponse::Ok().json(web::Json(json_data))
+    let response_data = JSONResponse::<Pipeline> {
+        data: Some(pipelines),
+        errors: None,
+    };
+    HttpResponse::Ok().json(response_data)
+}
+
+/// Get a specific Pipeline
+async fn get_pipeline(path: web::Path<String>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
+    let id = path.to_string();
+    let pipeline = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines WHERE id = ?", id)
+        .fetch_one(db_pool.get_ref())
+        .await
+        .unwrap();
+
+    let response_data = JSONResponse::<Pipeline> {
+        data: Some(vec![pipeline]),
+        errors: None,
+    };
+    HttpResponse::Ok().json(response_data)
 }
 
 /// Create a Pipeline
@@ -97,42 +135,59 @@ async fn create_pipeline(
     db_pool: web::Data<SqlitePool>,
 ) -> HttpResponse {
     sqlx::query!(
-        "INSERT INTO pipelines VALUES(?, ?, ?)",
+        "INSERT INTO pipelines (id, schedule) VALUES(?, ?)",
         pipeline.id,
-        pipeline.name,
         pipeline.schedule,
     )
     .execute(db_pool.get_ref())
     .await
     .unwrap();
 
-    HttpResponse::Created().json(web::Json(pipeline))
+    HttpResponse::Created().finish()
 }
 
-/// Return a list of all tasks
+/// Return a list of all Tasks
 async fn list_tasks(db_pool: web::Data<SqlitePool>) -> HttpResponse {
     let tasks = sqlx::query_as!(Task, "SELECT * FROM tasks")
         .fetch_all(db_pool.get_ref())
         .await
         .unwrap();
 
-    let json_data = json!({"data": tasks});
-    HttpResponse::Ok().json(web::Json(json_data))
+    let response_data = JSONResponse::<Task> {
+        data: Some(tasks),
+        errors: None,
+    };
+    HttpResponse::Ok().json(response_data)
+}
+
+/// Get a specific Task
+async fn get_task(path: web::Path<String>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
+    let id = path.to_string();
+    let task = sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = ?", id)
+        .fetch_one(db_pool.get_ref())
+        .await
+        .unwrap();
+
+    let response_data = JSONResponse::<Task> {
+        data: Some(vec![task]),
+        errors: None,
+    };
+    HttpResponse::Ok().json(response_data)
 }
 
 /// Create a Task
 async fn create_task(task: web::Json<Task>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
     sqlx::query!(
-        "INSERT INTO tasks VALUES(?, ?, ?)",
+        "INSERT INTO tasks (id, pipeline_id, command) VALUES(?, ?, ?)",
+        task.id,
         task.pipeline_id,
-        task.name,
         task.command,
     )
     .execute(db_pool.get_ref())
     .await
     .unwrap();
 
-    HttpResponse::Created().json(web::Json(task))
+    HttpResponse::Created().finish()
 }
 
 /// Configure and return a Server instance to be awaited

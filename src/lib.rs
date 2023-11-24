@@ -22,7 +22,7 @@ pub async fn synthesizer() {
     match cli.subcommand() {
         Some(("server", _)) => {
             // Init the db pool
-            let db_pool = SqlitePool::connect(&config.database.url)
+            let db_pool = SqlitePool::connect(&config.database.build_url())
                 .await
                 .expect("Failed to create the database pool!");
 
@@ -33,6 +33,12 @@ pub async fn synthesizer() {
             // Run the server
             println!("> Starting the webserver at address: {}", server_address);
             webserver::run(listener, db_pool).unwrap().await.unwrap();
+        }
+        Some(("setupdb", _)) => {
+            // Run the server
+            database::setupdb(&config.database.build_url())
+                .await
+                .expect("Failed to setup the database!");
         }
         Some(("check", sub_matches)) => {
             let manifest = commands::check(sub_matches);

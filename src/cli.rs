@@ -12,6 +12,8 @@ pub fn cli_builder() -> Command {
         .default_value("./data/synth_manifest.yml")
         .help("Path to a Synthesizer Pipelines manifest file.");
 
+    // Build the CLI entrypoint and its subcommands.
+    // For ease-of-use, alphabetize the commands!
     Command::new("Synthesizer")
         .propagate_version(true)
         .subcommand_required(true)
@@ -26,12 +28,14 @@ pub fn cli_builder() -> Command {
                 .default_value("synth.toml")
                 .help("Path to a Synthesizer Config File"),
         )
+        // Add Subcommands
         .subcommand(
             Command::new("check")
                 .about("Check that Synthesizer files are valid.")
                 .arg(&manifest_filepath),
         )
         .subcommand(Command::new("config").about("Show the config values that are being used."))
+        .subcommand(Command::new("setupdb").about("Create the database and run migrations."))
         .subcommand(Command::new("server").about("Run the server component."))
         .subcommand(Command::new("status").about("Ping the server."))
         .subcommand(

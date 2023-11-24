@@ -2,25 +2,34 @@ use std::net::TcpListener;
 
 use reqwest::{Client, StatusCode};
 use sqlx::SqlitePool;
-use synthesizer::{config, database, models, webserver};
-
-pub async fn setupdb() {
-    database::reset_database().await.unwrap();
-    database::run_migrations().await.unwrap();
-}
+use synthesizer::{
+    config::{self, BuildUrl},
+    database, models, webserver,
+};
+use uuid::Uuid;
 
 /// Spawn an application instance on a random, available
 /// port and return the address. The application instance
 /// will automatically be destroyed and cleaned when the
 /// process ends.
 pub async fn spawn_app() -> String {
-    let config = config::load_config("synth.toml").expect("Failed to load configuration!");
+    // Init values for configuration
+    let mut config = config::load_config("synth.toml").expect("Failed to load configuration!");
     let listener =
         TcpListener::bind("127.0.0.1:0").expect("Failed to bind to a random, available port!");
     let port = listener.local_addr().unwrap().port();
-    let db_pool = SqlitePool::connect(&config.database.url)
+    config.database.database = format!("test-{}", Uuid::new_v4().to_string());
+    let db_url = &config.database.build_url();
+
+    // Prepare the database and pool
+    database::setupdb(db_url)
+        .await
+        .expect("Failed to setup test database!");
+    let db_pool = SqlitePool::connect(db_url)
         .await
         .expect("Failed to create the database pool!");
+
+    // Run the application instance
     let _ = tokio::spawn(webserver::run(listener, db_pool).unwrap());
     format!("http://127.0.0.1:{}", port)
 }
@@ -91,12 +100,10 @@ mod pipelines {
     #[tokio::test]
     async fn create_one_pipeline_success() {
         // Arrange
-        setupdb().await;
         let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/pipelines", server_address);
         let request_data = models::Pipeline {
-            name: Some("testpipeline".to_owned()),
             id: "testpipeline".to_owned(),
             schedule: "1 * * * *".to_owned(),
         };
@@ -122,7 +129,6 @@ mod pipelines {
     #[tokio::test]
     async fn create_pipeline_failures() {
         // Arrange
-        setupdb().await;
         let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/pipelines", server_address);
@@ -158,35 +164,60 @@ mod tasks {
     #[tokio::test]
     async fn create_one_task_success() {
         // Arrange
-        setupdb().await;
         let server_address = spawn_app().await;
         let client = Client::new();
-        let url = &format!("{}/api/tasks", server_address);
+
+        // Create the objects used in the test
+        let id = "testtask".to_owned();
         let request_data = models::Task {
-            name: "testtask".to_owned(),
+            id: id.clone(),
             pipeline_id: "testpipeline".to_owned(),
             command: "1 * * * *".to_owned(),
         };
+        let response_data = webserver::JSONResponse::<models::Task> {
+            data: Some(request_data.clone()),
+            errors: None,
+        };
 
-        // Act
-        let response = client
-            .post(url)
+        // Send the POST for creation
+        let create_url = &format!("{}/api/tasks", server_address);
+        let create_response = client
+            .post(create_url)
             .json(&request_data)
             .send()
             .await
-            .expect("Failed to send request!");
+            .expect("Failed to POST task!");
 
-        // Assert
-        assert_eq!(response.status(), StatusCode::CREATED);
+        // GET the newly created object
+        let get_url = &format!("{}/api/tasks/{}", server_address, id);
+        let get_response = client
+            .get(get_url)
+            .send()
+            .await
+            .expect("Failed to GET task!");
 
-        let body: models::Task = response.json().await.unwrap();
-        assert_eq!(body, request_data);
+        // Assert that the POST was successful
+        assert_eq!(
+            create_response.status(),
+            StatusCode::CREATED,
+            "POST Task request failed!"
+        );
+        let body: models::Task = create_response.json().await.unwrap();
+        assert_eq!(body, request_data, "POST Task body unequal!");
+
+        // Assert that the GET was successful
+        assert_eq!(
+            get_response.status(),
+            StatusCode::OK,
+            "GET Task request failed!"
+        );
+        let body: webserver::JSONResponse<models::Task> = get_response.json().await.unwrap();
+        assert_eq!(body, response_data, "GET Task body unequal!");
     }
 
     #[tokio::test]
     async fn create_task_failures() {
         // Arrange
-        setupdb().await;
         let server_address = spawn_app().await;
         let client = Client::new();
         let url = &format!("{}/api/tasks", server_address);

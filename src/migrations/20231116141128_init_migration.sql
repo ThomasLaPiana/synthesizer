@@ -2,20 +2,17 @@
 -- Create the Pipelines table and seed data --
 ----------------------------------------------
 CREATE TABLE IF NOT EXISTS pipelines (
-    id TEXT NOT NULL UNIQUE,
-    name TEXT,
+    id TEXT NOT NULL PRIMARY KEY,
     schedule TEXT NOT NULL
 );
 -- Seed Pipelines data
 INSERT INTO pipelines
 VALUES(
         'pipeline1',
-        'Pipeline 1',
         '1 * * * *'
     ),
     (
         'pipeline2',
-        'Pipeline 2',
         '1 * * * *'
     );
 
@@ -23,19 +20,19 @@ VALUES(
 -- Create Tasks table and seed data --
 --------------------------------------
 CREATE TABLE IF NOT EXISTS tasks (
+    id TEXT NOT NULL PRIMARY KEY,
     pipeline_id TEXT NOT NULL,
-    name TEXT NOT NULL UNIQUE,
     command TEXT NOT NULL
 );
 -- Seed Tasks data
 INSERT INTO tasks
 VALUES(
-        'pipeline1',
         'task1',
+        'pipeline1',
         'echo yes'
     ),
     (
-        'pipeline2',
         'task2',
+        'pipeline2',
         'echo yes'
     );

@@ -7,4 +7,4 @@ port = 8080
 dirs = ["data"]
 
 [database]
-url = 'sqlite://synthesizer.sqlite?mode=rwc'
+database = "synthesizer"
