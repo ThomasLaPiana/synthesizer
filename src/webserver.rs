@@ -1,11 +1,12 @@
 use crate::models::{Pipeline, Task};
 use actix_web::dev::Server;
-use actix_web::{http::Method, middleware::Logger, web, App, HttpResponse, HttpServer, Route};
+use actix_web::{http::Method, web, App, HttpResponse, HttpServer, Route};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::fmt;
 use std::net::TcpListener;
 use tracing::subscriber::set_global_default;
+use tracing_actix_web::TracingLogger;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
@@ -196,13 +197,14 @@ async fn create_task(task: web::Json<Task>, db_pool: web::Data<SqlitePool>) -> H
 /// Configure and return a Server instance to be awaited
 pub fn run(listener: TcpListener, pool: SqlitePool) -> Result<Server, anyhow::Error> {
     // Configure logging and tracing
-    LogTracer::init().expect("Failed to set logger!");
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    let formatting_layer = BunyanFormattingLayer::new("synthesizer".into(), std::io::stdout);
+    let formatting_layer = BunyanFormattingLayer::new("synthesizer".to_string(), std::io::stdout);
     let subscriber = Registry::default()
         .with(env_filter)
         .with(JsonStorageLayer)
         .with(formatting_layer);
+    // Init logging/tracing
+    LogTracer::init().expect("Failed to set logger!");
     set_global_default(subscriber).expect("Failed to set subscriber!");
 
     // Configure DB Pool
@@ -210,7 +212,9 @@ pub fn run(listener: TcpListener, pool: SqlitePool) -> Result<Server, anyhow::Er
 
     let server = HttpServer::new(move || {
         // Build the App from the endpoint vector
-        let mut app = App::new().app_data(pool.clone()).wrap(Logger::default());
+        let mut app = App::new()
+            .app_data(pool.clone())
+            .wrap(TracingLogger::default());
         for endpoint in get_endpoints() {
             app = app.route(endpoint.path, endpoint.route);
         }

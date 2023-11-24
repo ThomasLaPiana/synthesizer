@@ -27,19 +27,22 @@ tasks:
 
   # --- Dev --- #
   - name: wc
-    description: "Watch the webserver files and compile check on changes"
+    description: "Watch the webserver files and check on changes"
     command: cargo watch -c -x check
+
+  - name: wr
+    description: "Watch the webserver files and restart the server"
+    command: cargo watch -c -x 'run server'
 
   - name: wt
     description: "Watch the src files and test on changes"
-    command: cargo watch -c -x test
+    command: cargo watch -c -x 'nextest run -j1 --retries 2'
 
   - name: check
     command: "cargo check"
-    description: "'cargo check'"
 
   - name: build
-    command: "cargo check"
+    command: "cargo build"
 
   - name: fmt
     command: "cargo fmt"
@@ -48,6 +51,10 @@ tasks:
   - name: test
     description: "Run tests"
     command: cargo nextest run -j 1 --retries 2
+
+  - name: rm-test-dbs
+    command: rm test-*
+    description: Remove test databases with a glob pattern
 
   - name: clippy
     command: "cargo clippy -- -D warnings"
@@ -73,3 +80,4 @@ pipelines:
     description: "Run the suite of CI checks, including linting and tests"
     stages:
       - ["check", "fmt", "test", "clippy"]
+      - ["rm-test-dbs"]
