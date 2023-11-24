@@ -7,7 +7,7 @@ pub struct Task {
     pub command: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq, Clone)]
 pub struct Pipeline {
     pub id: String,
     pub schedule: String,

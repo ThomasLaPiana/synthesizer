@@ -45,15 +45,20 @@ mod generic {
         let client = Client::new();
         let url = &format!("{}/api/health", server_address);
 
-        // Act
+        // Verify the Status
         let response = client
             .get(url)
             .send()
             .await
             .expect("Failed to send request!");
+        assert_eq!(response.status(), StatusCode::OK);
 
-        // Assert
-        assert_eq!(response.status(), StatusCode::OK)
+        // Verify the Response Data
+        let body: webserver::JSONResponse<String> = response
+            .json()
+            .await
+            .expect("Failed to parse the health response!");
+        assert_eq!(body.data, Some(vec!["Feeling healthy!".to_string()]));
     }
 
     #[tokio::test]
@@ -102,28 +107,48 @@ mod pipelines {
         // Arrange
         let server_address = spawn_app().await;
         let client = Client::new();
-        let url = &format!("{}/api/pipelines", server_address);
-        let request_data = models::Pipeline {
-            id: "testpipeline".to_owned(),
+        let id = "testpipeline".to_string();
+
+        // Send the POST for creation
+        let create_url = &format!("{}/api/pipelines", server_address);
+        let create_data = models::Pipeline {
+            id: id.clone(),
             schedule: "1 * * * *".to_owned(),
         };
-
-        // Act
-        let response = client
-            .post(url)
-            .json(&request_data)
+        let create_response = client
+            .post(create_url)
+            .json(&create_data)
             .send()
             .await
-            .expect("Failed to send request!");
+            .expect("Failed to POST pipeline!");
 
-        // Assert
-        assert_eq!(response.status(), StatusCode::CREATED);
-
-        let body: models::Pipeline = response
-            .json()
+        // GET the newly created object
+        let get_url = &format!("{}/api/pipelines/{}", server_address, id);
+        let get_data = webserver::JSONResponse::<models::Pipeline> {
+            data: Some(vec![create_data.clone()]),
+            errors: None,
+        };
+        let get_response = client
+            .get(get_url)
+            .send()
             .await
-            .expect("Failed to parse the create pipeline response!");
-        assert_eq!(body, request_data);
+            .expect("Failed to GET pipeline!");
+
+        // Assert that the POST was successful
+        assert_eq!(
+            create_response.status(),
+            StatusCode::CREATED,
+            "POST Pipeline request failed!"
+        );
+
+        // Assert that the GET was successful
+        assert_eq!(
+            get_response.status(),
+            StatusCode::OK,
+            "GET Pipeline request failed!"
+        );
+        let body: webserver::JSONResponse<models::Pipeline> = get_response.json().await.unwrap();
+        assert_eq!(body, get_data, "GET Pipeline body unequal!");
     }
 
     #[tokio::test]
@@ -169,27 +194,27 @@ mod tasks {
 
         // Create the objects used in the test
         let id = "testtask".to_owned();
-        let request_data = models::Task {
+
+        // Send the POST for creation
+        let create_url = &format!("{}/api/tasks", server_address);
+        let create_data = models::Task {
             id: id.clone(),
             pipeline_id: "testpipeline".to_owned(),
             command: "1 * * * *".to_owned(),
         };
-        let response_data = webserver::JSONResponse::<models::Task> {
-            data: Some(request_data.clone()),
-            errors: None,
-        };
-
-        // Send the POST for creation
-        let create_url = &format!("{}/api/tasks", server_address);
         let create_response = client
             .post(create_url)
-            .json(&request_data)
+            .json(&create_data)
             .send()
             .await
             .expect("Failed to POST task!");
 
         // GET the newly created object
         let get_url = &format!("{}/api/tasks/{}", server_address, id);
+        let get_data = webserver::JSONResponse::<models::Task> {
+            data: Some(vec![create_data.clone()]),
+            errors: None,
+        };
         let get_response = client
             .get(get_url)
             .send()
@@ -202,8 +227,6 @@ mod tasks {
             StatusCode::CREATED,
             "POST Task request failed!"
         );
-        let body: models::Task = create_response.json().await.unwrap();
-        assert_eq!(body, request_data, "POST Task body unequal!");
 
         // Assert that the GET was successful
         assert_eq!(
@@ -212,7 +235,7 @@ mod tasks {
             "GET Task request failed!"
         );
         let body: webserver::JSONResponse<models::Task> = get_response.json().await.unwrap();
-        assert_eq!(body, response_data, "GET Task body unequal!");
+        assert_eq!(body, get_data, "GET Task body unequal!");
     }
 
     #[tokio::test]
