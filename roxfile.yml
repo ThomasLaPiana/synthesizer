@@ -79,5 +79,5 @@ pipelines:
   - name: ci
     description: "Run the suite of CI checks, including linting and tests"
     stages:
-      - ["check", "fmt", "test", "clippy"]
+      - ["fmt", "clippy", "test"]
       - ["rm-test-dbs"]
