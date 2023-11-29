@@ -3,3 +3,7 @@
 // 1. Seeing that something is ready to be run in the database
 // 2. Spawning a thread to handle execution
 // 3. Checking the status?
+
+pub fn some_fun() {
+    todo!()
+}

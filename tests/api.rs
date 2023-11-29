@@ -2,10 +2,9 @@ use std::net::TcpListener;
 
 use reqwest::{Client, StatusCode};
 use sqlx::SqlitePool;
-use synthesizer::{
-    config::{self, BuildUrl},
-    database, models, webserver,
-};
+use synthesizer::common::config::{self, BuildUrl};
+use synthesizer::common::models;
+use synthesizer::server::{database, models::JSONResponse, webserver};
 use uuid::Uuid;
 
 /// Spawn an application instance on a random, available
@@ -18,7 +17,7 @@ pub async fn spawn_app() -> String {
     let listener =
         TcpListener::bind("127.0.0.1:0").expect("Failed to bind to a random, available port!");
     let port = listener.local_addr().unwrap().port();
-    config.database.database = format!("test-{}", Uuid::new_v4().to_string());
+    config.database.database = format!("test-{}", Uuid::new_v4());
     let db_url = &config.database.build_url();
 
     // Prepare the database and pool
@@ -30,7 +29,7 @@ pub async fn spawn_app() -> String {
         .expect("Failed to create the database pool!");
 
     // Run the application instance
-    let _ = tokio::spawn(webserver::run(listener, db_pool).unwrap());
+    let _ = tokio::spawn(webserver::run_webserver(listener, db_pool).unwrap());
     format!("http://127.0.0.1:{}", port)
 }
 
@@ -54,7 +53,7 @@ mod generic {
         assert_eq!(response.status(), StatusCode::OK);
 
         // Verify the Response Data
-        let body: webserver::JSONResponse<String> = response
+        let body: JSONResponse<String> = response
             .json()
             .await
             .expect("Failed to parse the health response!");
@@ -124,7 +123,7 @@ mod pipelines {
 
         // GET the newly created object
         let get_url = &format!("{}/api/pipelines/{}", server_address, id);
-        let get_data = webserver::JSONResponse::<models::Pipeline> {
+        let get_data = JSONResponse::<models::Pipeline> {
             data: Some(vec![create_data.clone()]),
             errors: None,
         };
@@ -147,7 +146,7 @@ mod pipelines {
             StatusCode::OK,
             "GET Pipeline request failed!"
         );
-        let body: webserver::JSONResponse<models::Pipeline> = get_response.json().await.unwrap();
+        let body: JSONResponse<models::Pipeline> = get_response.json().await.unwrap();
         assert_eq!(body, get_data, "GET Pipeline body unequal!");
     }
 
@@ -211,7 +210,7 @@ mod tasks {
 
         // GET the newly created object
         let get_url = &format!("{}/api/tasks/{}", server_address, id);
-        let get_data = webserver::JSONResponse::<models::Task> {
+        let get_data = JSONResponse::<models::Task> {
             data: Some(vec![create_data.clone()]),
             errors: None,
         };
@@ -234,7 +233,7 @@ mod tasks {
             StatusCode::OK,
             "GET Task request failed!"
         );
-        let body: webserver::JSONResponse<models::Task> = get_response.json().await.unwrap();
+        let body: JSONResponse<models::Task> = get_response.json().await.unwrap();
         assert_eq!(body, get_data, "GET Task body unequal!");
     }
 

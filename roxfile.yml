@@ -32,7 +32,7 @@ tasks:
 
   - name: wr
     description: "Watch the webserver files and restart the server"
-    command: cargo watch -c -x 'run server'
+    command: cargo watch -c -x run
 
   - name: wt
     description: "Watch the src files and test on changes"

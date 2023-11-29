@@ -4,6 +4,19 @@ description = "Compose and Manage Data Pipelines"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
+default-run = "synth-server"
+
+[lib]
+name = "synthesizer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "synth"
+path = "src/cli/main.rs"
+
+[[bin]]
+name = "synth-server"
+path = "src/server/main.rs"
 
 # Set optimization levels for dev builds
 [profile.dev]

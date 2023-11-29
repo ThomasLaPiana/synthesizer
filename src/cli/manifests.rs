@@ -1,4 +1,4 @@
-use crate::models;
+use crate::common::models;
 
 pub fn parse_manifest_file(contents: String) -> models::Manifest {
     let roxfile_result = serde_yaml::from_str(&contents);

@@ -1,5 +1,5 @@
-use crate::models;
-use crate::{manifests, utils};
+use crate::common::models;
+use crate::{cli::manifests, cli::utils};
 use clap::ArgMatches;
 
 pub fn check(sub_matches: &ArgMatches) -> models::Manifest {

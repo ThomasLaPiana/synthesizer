@@ -1,4 +1,4 @@
-use synthesizer::{manifests, utils};
+use synthesizer::cli::{manifests, utils};
 
 #[test]
 fn check_default_manifest() {
