@@ -4,6 +4,13 @@
 // 2. Spawning a thread to handle execution
 // 3. Checking the status?
 
-pub fn some_fun() {
+pub fn run() {
+    // Load Pipelines into memory
+
+    // Loop through them to figure out when the next runtime is
+
+    // If it is ready to run, pass it to an execution thread
+
+    // check the results of the execution thread, store the logs/status in the database
     todo!()
 }
