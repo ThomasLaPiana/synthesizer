@@ -1,0 +1,5 @@
+# Contains build information for Rust
+
+# This requires nighty until 1.76.0 is release
+[build]
+rustflags = ["-Z", "threads=8"]
