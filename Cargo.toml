@@ -30,7 +30,7 @@ sqlx = { version = "0.7.1", features = [
     "migrate",
 ] }
 tokio = { version = "1.31.0", features = ["full"] }
-tracing = { version = "0.1.40", features = ["log"] }
+tracing = { version = "0.1.40", features = ["log", "attributes"] }
 tracing-log = "0.2.0"
 tracing-actix-web = "0.7"
 tracing-subscriber = { version = "0.3.18", features = [

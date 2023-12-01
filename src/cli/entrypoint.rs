@@ -2,8 +2,6 @@ use crate::common::models::Manifest;
 use clap::{crate_version, Arg, Command};
 use reqwest::blocking::Client;
 use serde_json::json;
-use sqlx::SqlitePool;
-use std::net::TcpListener;
 
 use crate::cli::{commands, entrypoint, utils};
 use crate::common::config::{load_config, BuildUrl};
@@ -75,21 +73,7 @@ pub async fn run() {
 
     match cli.subcommand() {
         Some(("server", _)) => {
-            // Init the db pool
-            let db_pool = SqlitePool::connect(&config.database.build_url())
-                .await
-                .expect("Failed to create the database pool!");
-
-            // Prepare values to configure the server
-            let server_address = "127.0.0.1:8080";
-            let listener = TcpListener::bind(server_address).expect("Failed to bind port!");
-
-            // Run the server
-            println!("> Starting the webserver at address: {}", server_address);
-            webserver::run_webserver(listener, db_pool)
-                .unwrap()
-                .await
-                .unwrap();
+            webserver::start_webserver().await;
         }
         Some(("setupdb", _)) => {
             // Run the server
