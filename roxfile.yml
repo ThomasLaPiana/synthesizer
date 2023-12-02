@@ -25,6 +25,10 @@ tasks:
     uses: sqlx
     values: ["migrate run --source src/migrations"]
 
+  - name: prepare
+    description: Create a query cache for sqlx
+    command: cargo sqlx prepare
+
   # --- Dev --- #
   - name: wc
     description: "Watch the webserver files and check on changes"
