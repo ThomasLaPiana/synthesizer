@@ -4,6 +4,19 @@ description = "Compose and Manage Data Pipelines"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
+default-run = "synth"
+
+[[bin]]
+name = "synth"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "synth-api"
+path = "src/bin/api.rs"
+
+[[bin]]
+name = "synth-scheduler"
+path = "src/bin/scheduler.rs"
 
 # Set optimization levels for dev builds
 [profile.dev]

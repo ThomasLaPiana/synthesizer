@@ -1,7 +1,7 @@
 use crate::helpers::spawn_app;
 use pretty_assertions::assert_eq;
 use reqwest::{Client, StatusCode};
-use synthesizer::server::models::JSONResponse;
+use synthesizer::api::models::JSONResponse;
 
 #[tokio::test]
 async fn health_success() {

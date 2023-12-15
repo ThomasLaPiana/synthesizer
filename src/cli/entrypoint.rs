@@ -3,10 +3,9 @@ use clap::{crate_version, Arg, Command};
 use reqwest::blocking::Client;
 use serde_json::json;
 
-use crate::cli::{commands, entrypoint, utils};
+use super::{commands, entrypoint, utils};
 use crate::common::config::{load_config, BuildUrl};
-use crate::server::database;
-use crate::server::webserver;
+use crate::common::database;
 
 /// Construct the CLI
 pub fn cli_builder() -> Command {
@@ -41,7 +40,6 @@ pub fn cli_builder() -> Command {
         )
         .subcommand(Command::new("config").about("Show the config values that are being used."))
         .subcommand(Command::new("setupdb").about("Create the database and run migrations."))
-        .subcommand(Command::new("server").about("Run the server component."))
         .subcommand(Command::new("status").about("Ping the server."))
         .subcommand(
             Command::new("ls")
@@ -72,9 +70,6 @@ pub async fn run() {
     let server_url = config.server.build_url();
 
     match cli.subcommand() {
-        Some(("server", _)) => {
-            webserver::start_webserver().await;
-        }
         Some(("setupdb", _)) => {
             // Run the server
             database::setupdb(&config.database.build_url())

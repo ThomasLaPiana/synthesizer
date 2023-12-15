@@ -1,7 +1,8 @@
 use sqlx::SqlitePool;
 use std::net::TcpListener;
+use synthesizer::api::webserver;
 use synthesizer::common::config::{self, BuildUrl};
-use synthesizer::server::{database, webserver};
+use synthesizer::common::database;
 use uuid::Uuid;
 
 /// Spawn an application instance on a random, available

@@ -1,10 +1,12 @@
 use crate::common::models::Pipeline;
+use crate::common::{database, telemetry};
 use sqlx;
-use sqlx::SqlitePool;
 use tracing::{info, instrument};
 
 #[instrument(name = "Scheduler", skip_all)]
-pub async fn run_scheduler(db_pool: SqlitePool) {
+pub async fn run_scheduler() {
+    telemetry::init_logging();
+    let db_pool = database::get_db_pool().await;
     loop {
         info!("Loading pipelines from db...");
         let pipelines: Vec<Pipeline> = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines")

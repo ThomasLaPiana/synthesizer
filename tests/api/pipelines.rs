@@ -1,8 +1,8 @@
 use crate::helpers::spawn_app;
 use pretty_assertions::assert_eq;
 use reqwest::{Client, StatusCode};
+use synthesizer::api::models::JSONResponse;
 use synthesizer::common::models;
-use synthesizer::server::models::JSONResponse;
 
 #[tokio::test]
 async fn list_pipelines_success() {
