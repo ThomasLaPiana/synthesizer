@@ -34,9 +34,11 @@ tasks:
     description: "Watch the webserver files and check on changes"
     command: cargo watch -c -x check
 
-  - name: wr
-    description: "Watch the webserver files and restart the server"
-    command: cargo watch -c -x 'run server'
+  - name: api 
+    command: cargo watch -c -x 'run --bin synth-api'
+
+  - name: scheduler
+    command: cargo watch -c -x 'run --bin synth-scheduler'
 
   - name: wt
     description: "Watch the src files and test on changes"

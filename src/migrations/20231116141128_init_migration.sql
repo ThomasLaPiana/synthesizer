@@ -34,12 +34,22 @@ INSERT INTO tasks
 VALUES(
         'task1',
         'pipeline1',
-        'echo yes'
+        'echo task1 for pipeline1! && sleep 2'
     ),
     (
         'task2',
+        'pipeline1',
+        'echo task2 for pipeline1!'
+    ),
+    (
+        'task3',
         'pipeline2',
-        'echo yes'
+        'echo task3 for pipeline2! && sleep 1'
+    ),
+    (
+        'task4',
+        'pipeline2',
+        'echo task4 for pipeline2!'
     );
 
 -----------------------------------------------
