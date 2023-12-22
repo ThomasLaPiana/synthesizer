@@ -4,8 +4,8 @@ use chrono::{DateTime, Utc};
 use cron_parser::parse;
 use sqlx::{self, Pool, Sqlite};
 use std::collections::HashMap;
-use std::process::Command;
-use tracing::{info, instrument};
+use std::process::{Command, Stdio};
+use tracing::{error, info, instrument, span, Level};
 
 async fn async_sleep(sleep_secs: u64) {
     let sleep_duration = tokio::time::Duration::from_secs(sleep_secs);
@@ -13,36 +13,68 @@ async fn async_sleep(sleep_secs: u64) {
 }
 
 #[instrument(name = "PipelineRunner", skip_all)]
-async fn pipeline_runner(
-    pipeline: &Pipeline,
-    current_run_time: &DateTime<Utc>,
-    db_pool: &Pool<Sqlite>,
-) {
+async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_pool: Pool<Sqlite>) {
     info!("Running Pipeline: {}", &pipeline.id);
+    let pipeline_instance = format!("{}_{}", pipeline.id, scheduled_time);
+    let pipeline_id = pipeline.id.clone();
 
     let tasks: Vec<Task> = sqlx::query_as!(
         Task,
         "SELECT * FROM tasks WHERE pipeline_id = ?",
         pipeline.id
     )
-    .fetch_all(db_pool)
+    .fetch_all(&db_pool)
     .await
     .unwrap();
 
-    info!(
-        "Running Pipeline Instance: {}_{}",
-        pipeline.id, current_run_time
-    );
-
-    // Spawn a new thread to handle each Pipeline's tasks
-    tokio::task::spawn(async {
+    info!("Executing Pipeline Instance: {}", pipeline_instance);
+    // Spawn a new thread to handle the Pipeline's tasks
+    tokio::task::spawn(async move {
         for task in tasks {
-            let mut result = Command::new("sh")
+            let span = span!(Level::INFO, "TaskRunner");
+            let _enter = span.enter();
+            info!(
+                "Task '{}' for Pipeline '{}' has started!",
+                task.id, pipeline_id
+            );
+            // Run the Task subprocess
+            let task_process = Command::new("sh")
                 .arg("-c")
                 .arg(task.command)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
                 .spawn()
-                .expect("Command failed!");
-            result.wait().expect("Task failed!");
+                .expect("Task failed to start!");
+            let output = task_process
+                .wait_with_output()
+                .expect("Failed to wait on the Task!");
+
+            info!("Saving to database...");
+            let output_status = output.status.to_string();
+            let output_logs = output.stdout;
+            let created_at = &Utc::now();
+            let task_instance = format!("{}_{}", task.id, pipeline_instance);
+            sqlx::query!(
+                "INSERT INTO task_instances (id, task_id, pipeline_id, execution_time, status, logs, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                task_instance,
+                task.id,
+                pipeline_id,
+                scheduled_time,
+                output_status,
+                output_logs,
+                created_at,
+            )
+            .execute(&db_pool)
+            .await
+            .unwrap();
+
+            // Store the results in the database
+            if output.status.success() {
+                info!("Task succeeded!");
+            } else {
+                error!("Task failed! Stopping Pipeline.");
+                break;
+            }
         }
     });
 }
@@ -58,8 +90,6 @@ pub async fn run_scheduler() {
     loop {
         let now = &Utc::now();
         info!("------------------------------");
-        info!("Current time: {}", now);
-        info!("Loading Pipelines from db...");
         let pipelines: Vec<Pipeline> = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines")
             .fetch_all(&db_pool)
             .await
@@ -71,7 +101,10 @@ pub async fn run_scheduler() {
 
             // Handle new Pipelines
             if current_scheduled_time.is_none() {
-                info!("Added '{}' to the HashMap...", pipeline.id);
+                info!(
+                    "Added '{}' to the HashMap! Next execution at: {}",
+                    pipeline.id, next
+                );
                 continue;
             }
 
@@ -81,16 +114,10 @@ pub async fn run_scheduler() {
             if requires_execution {
                 info!("Pipeline '{}' is ready for execution!", pipeline.id);
                 pipeline_schedules.insert(pipeline.id.clone(), next);
-                pipeline_runner(&pipeline, &current_scheduled_time, &db_pool).await;
-            } else {
-                info!(
-                    "Pipeline '{}' is not ready for execution! Next execution at: {}",
-                    pipeline.id, current_scheduled_time
-                );
+                pipeline_runner(pipeline.clone(), current_scheduled_time, db_pool.clone()).await;
             }
         }
 
-        info!("{:?}", pipeline_schedules);
         // Sleep a tad to avoid resource saturation
         async_sleep(5).await;
     }

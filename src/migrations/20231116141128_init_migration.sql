@@ -34,45 +34,34 @@ INSERT INTO tasks
 VALUES(
         'task1',
         'pipeline1',
-        'echo Beginning task1 for pipeline1! && sleep 6 && echo Ending task1 for pipeline1!'
+        'sleep 6 && echo some logs'
     ),
     (
         'task2',
         'pipeline1',
-        'echo Beginning task2 for pipeline1! && sleep 7 && echo Ending task2 for pipeline1!'
+        'sleep 11'
     ),
     (
         'task3',
         'pipeline2',
-        'echo Beginning task1 for pipeline2! && sleep 8 && echo Ending task1 for pipeline2!'
+        'sleep 8 && fail'
     ),
     (
         'task4',
         'pipeline2',
-        'echo Beginning task2 for pipeline2! && sleep 9 && echo Ending task2 for pipeline2!'
+        'sleep 7'
     );
 
--------------------------------------
--- Create the Pipeline Queue table --
--------------------------------------
-CREATE TABLE IF NOT EXISTS pipeline_queue (
-    id TEXT NOT NULL PRIMARY KEY
-    , pipeline_id TEXT NOT NULL
-    , schedule
-    , command TEXT NOT NULL
-    , created_at TEXT NOT NULL
-    , modified_at TEXT NOT NULL
-    , picked_up BOOLEAN NOT NULL
-);
 
 -----------------------------------------------
 -- Create the PipelineRuns table and seed data --
 -----------------------------------------------
-CREATE TABLE IF NOT EXISTS pipeline_runs (
-    id TEXT NOT NULL PRIMARY KEY,
-    task_id TEXT NOT NULL,
-    pipeline_id TEXT NOT NULL,
-    status TEXT
-    -- TODO: Add created_at
-    -- TODO: Add modified_at
+CREATE TABLE IF NOT EXISTS task_instances (
+    id TEXT NOT NULL PRIMARY KEY
+    , task_id TEXT NOT NULL
+    , pipeline_id TEXT NOT NULL
+    , execution_time TEXT NOT NULL
+    , status TEXT NOT NULL
+    , logs TEXT NOT NULL
+    , created_at TEXT NOT NULL
 );

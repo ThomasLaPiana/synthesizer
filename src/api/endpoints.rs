@@ -1,6 +1,7 @@
 use super::models::JSONResponse;
 use super::pipeline_endpoints::{create_pipeline, get_pipeline, list_pipelines};
 use super::task_endpoints::{create_task, get_task, list_tasks};
+use super::task_instance_endpoints::{get_task_instance, list_task_instances};
 use actix_web::{http::Method, web, HttpResponse, Route};
 use std::fmt;
 
@@ -63,6 +64,17 @@ pub fn get_endpoints() -> Vec<Endpoint> {
             path: "/api/tasks/{id}",
             method: Method::GET,
             route: web::get().to(get_task),
+        },
+        // Task Instances
+        Endpoint {
+            path: "/api/task_instances",
+            method: Method::GET,
+            route: web::get().to(list_task_instances),
+        },
+        Endpoint {
+            path: "/api/task_instances/{id}",
+            method: Method::GET,
+            route: web::get().to(get_task_instance),
         },
     ]
 }
