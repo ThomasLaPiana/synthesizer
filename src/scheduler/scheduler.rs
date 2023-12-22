@@ -95,25 +95,29 @@ pub async fn run_scheduler() {
             .await
             .unwrap();
 
+        // NOTE: Easily parallelizable
         for pipeline in pipelines {
-            let next: DateTime<Utc> = parse(&pipeline.schedule, &Utc::now()).unwrap();
-            let current_scheduled_time = pipeline_schedules.insert(pipeline.id.clone(), next);
+            // The 'parse' method returns the next execution time
+            let next_scheduled_time: DateTime<Utc> =
+                parse(&pipeline.schedule, &Utc::now()).unwrap();
+            let current_scheduled_time =
+                pipeline_schedules.insert(pipeline.id.clone(), next_scheduled_time);
 
             // Handle new Pipelines
             if current_scheduled_time.is_none() {
                 info!(
                     "Added '{}' to the HashMap! Next execution at: {}",
-                    pipeline.id, next
+                    pipeline.id, next_scheduled_time
                 );
                 continue;
             }
 
             let current_scheduled_time = current_scheduled_time.unwrap();
-            let requires_execution = current_scheduled_time < *now;
+            let requires_execution = current_scheduled_time != next_scheduled_time;
 
             if requires_execution {
                 info!("Pipeline '{}' is ready for execution!", pipeline.id);
-                pipeline_schedules.insert(pipeline.id.clone(), next);
+                pipeline_schedules.insert(pipeline.id.clone(), next_scheduled_time);
                 pipeline_runner(pipeline.clone(), current_scheduled_time, db_pool.clone()).await;
             }
         }
