@@ -12,11 +12,11 @@ CREATE TABLE IF NOT EXISTS pipelines (
 INSERT INTO pipelines
 VALUES(
         'pipeline1',
-        '1 * * * *'
+        '*/1 * * * *'
     ),
     (
         'pipeline2',
-        '2 * * * *'
+        '*/2 * * * *'
     );
 
 --------------------------------------
@@ -34,33 +34,35 @@ INSERT INTO tasks
 VALUES(
         'task1',
         'pipeline1',
-        'echo task1 for pipeline1! && sleep 2'
+        'echo Beginning task1 for pipeline1! && sleep 6 && echo Ending task1 for pipeline1!'
     ),
     (
         'task2',
         'pipeline1',
-        'echo task2 for pipeline1!'
+        'echo Beginning task2 for pipeline1! && sleep 7 && echo Ending task2 for pipeline1!'
     ),
     (
         'task3',
         'pipeline2',
-        'echo task3 for pipeline2! && sleep 1'
+        'echo Beginning task1 for pipeline2! && sleep 8 && echo Ending task1 for pipeline2!'
     ),
     (
         'task4',
         'pipeline2',
-        'echo task4 for pipeline2!'
+        'echo Beginning task2 for pipeline2! && sleep 9 && echo Ending task2 for pipeline2!'
     );
 
------------------------------------------------
--- Create the Task Queue table and seed data --
------------------------------------------------
-CREATE TABLE IF NOT EXISTS task_queue (
-    id TEXT NOT NULL PRIMARY KEY,
-    pipeline_id TEXT NOT NULL,
-    command TEXT NOT NULL
-    -- TODO: Add created_at
-    -- TODO: Add modified_at
+-------------------------------------
+-- Create the Pipeline Queue table --
+-------------------------------------
+CREATE TABLE IF NOT EXISTS pipeline_queue (
+    id TEXT NOT NULL PRIMARY KEY
+    , pipeline_id TEXT NOT NULL
+    , schedule
+    , command TEXT NOT NULL
+    , created_at TEXT NOT NULL
+    , modified_at TEXT NOT NULL
+    , picked_up BOOLEAN NOT NULL
 );
 
 -----------------------------------------------
