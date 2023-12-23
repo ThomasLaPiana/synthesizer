@@ -52,6 +52,7 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
             info!("Saving to database...");
             let output_status = output.status.to_string();
             let output_logs = output.stdout;
+            // TODO: add Stderr
             let created_at = &Utc::now();
             let task_instance = format!("{}_{}", task.id, pipeline_instance);
             sqlx::query!(
@@ -88,7 +89,6 @@ pub async fn run_scheduler() {
 
     // This never-ending loop is the scheduler
     loop {
-        let now = &Utc::now();
         info!("------------------------------");
         let pipelines: Vec<Pipeline> = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines")
             .fetch_all(&db_pool)
