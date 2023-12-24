@@ -8,13 +8,9 @@ edition = "2021"
 [dependencies]
 actix-web = "4.4.0"
 anyhow = "1.0.71"
-clap = { version = "4.4.4", features = ["string", "cargo"] }
 config = { version = "0.13.4", features = ["toml"] }
-cron-parser = "0.8.1"
-reqwest = { version = "0.11.22", features = ["blocking", "json", "rustls-tls"] }
 serde = { version = "1.0.183", features = ["derive"] }
 serde_json = "1.0.105"
-serde_yaml = "0.9.25"
 sqlx = { version = "0.7.1", features = [
     "runtime-tokio",
     "sqlite",
@@ -35,8 +31,9 @@ tracing-subscriber = { version = "0.3.18", features = [
     "registry",
 ] }
 uuid = { version = "1.6.1", features = ["v4"] }
-chrono = "0.4.31"
 synth_common = { path = "../synth_common" }
 
 [dev-dependencies]
+
 pretty_assertions = "1.4.0"
+reqwest = { version = "0.11.6", features = ["json"] }
