@@ -2,14 +2,26 @@ use chrono::{DateTime, Utc};
 use cron_parser::parse;
 use sqlx::{self, Pool, Sqlite};
 use std::collections::HashMap;
-use std::process::{Command, Stdio};
-use synth_common::database;
-use synth_common::models::{Pipeline, Task};
+use std::process::{Command, Output, Stdio};
+use synth_common::models::{Pipeline, Task, TaskInstance};
+use synth_common::{database, queries};
 use tracing::{error, info, instrument, span, Level};
 
 async fn async_sleep(sleep_secs: u64) {
     let sleep_duration = tokio::time::Duration::from_secs(sleep_secs);
     tokio::time::sleep(sleep_duration).await;
+}
+
+fn run_task_command(task_command: &str) -> Output {
+    Command::new("sh")
+        .arg("-c")
+        .arg(task_command)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Task failed to start!")
+        .wait_with_output()
+        .expect("Failed to wait on the Task!")
 }
 
 #[instrument(name = "PipelineRunner", skip_all)]
@@ -18,14 +30,9 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
     let pipeline_instance = format!("{}_{}", pipeline.id, scheduled_time);
     let pipeline_id = pipeline.id.clone();
 
-    let tasks: Vec<Task> = sqlx::query_as!(
-        Task,
-        "SELECT * FROM tasks WHERE pipeline_id = ?",
-        pipeline.id
-    )
-    .fetch_all(&db_pool)
-    .await
-    .unwrap();
+    let tasks = queries::select_task_instances_by_pipeline_id(&pipeline_id, &db_pool)
+        .await
+        .unwrap();
 
     info!("Executing Pipeline Instance: {}", pipeline_instance);
     // Spawn a new thread to handle the Pipeline's tasks
@@ -38,36 +45,23 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
                 task.id, pipeline_id
             );
             // Run the Task subprocess
-            let task_process = Command::new("sh")
-                .arg("-c")
-                .arg(task.command)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-                .expect("Task failed to start!");
-            let output = task_process
-                .wait_with_output()
-                .expect("Failed to wait on the Task!");
+            let output = run_task_command(&task.command);
 
+            let task_instance_id = format!("{}_{}_{}", task.id, pipeline_instance, scheduled_time);
+            let task_instance = TaskInstance {
+                id: task_instance_id,
+                task_id: task.id,
+                pipeline_id: pipeline_id.clone(),
+                execution_time: scheduled_time.to_string(),
+                status: output.status.to_string(),
+                // TODO: add Stderr
+                logs: format!("{:?}", output.stdout),
+                created_at: Utc::now().to_string(),
+            };
             info!("Saving to database...");
-            let output_status = output.status.to_string();
-            let output_logs = output.stdout;
-            // TODO: add Stderr
-            let created_at = &Utc::now();
-            let task_instance = format!("{}_{}", task.id, pipeline_instance);
-            sqlx::query!(
-                "INSERT INTO task_instances (id, task_id, pipeline_id, execution_time, status, logs, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                task_instance,
-                task.id,
-                pipeline_id,
-                scheduled_time,
-                output_status,
-                output_logs,
-                created_at,
-            )
-            .execute(&db_pool)
-            .await
-            .unwrap();
+            queries::insert_task_instance(task_instance, &db_pool)
+                .await
+                .unwrap();
 
             // Store the results in the database
             if output.status.success() {
