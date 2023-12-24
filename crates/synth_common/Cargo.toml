@@ -1,0 +1,41 @@
+[package]
+name = "synth_common"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4.4.0"
+anyhow = "1.0.71"
+clap = { version = "4.4.4", features = ["string", "cargo"] }
+config = { version = "0.13.4", features = ["toml"] }
+cron-parser = "0.8.1"
+reqwest = { version = "0.11.22", features = ["blocking", "json", "rustls-tls"] }
+serde = { version = "1.0.183", features = ["derive"] }
+serde_json = "1.0.105"
+serde_yaml = "0.9.25"
+sqlx = { version = "0.7.1", features = [
+    "runtime-tokio",
+    "sqlite",
+    "macros",
+    "uuid",
+    "chrono",
+    "migrate",
+] }
+tokio = { version = "1.31.0", features = ["full"] }
+tracing = { version = "0.1.40", features = ["log", "attributes"] }
+tracing-log = "0.2.0"
+tracing-actix-web = "0.7"
+tracing-subscriber = { version = "0.3.18", features = [
+    "std",
+    "fmt",
+    "json",
+    "env-filter",
+    "registry",
+] }
+uuid = { version = "1.6.1", features = ["v4"] }
+chrono = "0.4.31"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"

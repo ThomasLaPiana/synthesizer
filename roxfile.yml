@@ -23,7 +23,7 @@ tasks:
   - name: migratedb
     description: "Migrate the database"
     uses: sqlx
-    values: ["migrate run --source src/migrations"]
+    values: ["migrate run --source crates/synth_common/src/migrations"]
 
   - name: prepare
     description: Create a query cache for sqlx
@@ -35,14 +35,14 @@ tasks:
     command: cargo watch -c -x check
 
   - name: api 
-    command: cargo watch -c -x 'run --bin synth-api'
+    command: cargo watch -c -x 'run -p synth_api'
 
   - name: scheduler
-    command: cargo watch -c -x 'run --bin synth-scheduler'
+    command: cargo watch -c -x 'run -p synth_scheduler'
 
   - name: wt
     description: "Watch the src files and test on changes"
-    command: cargo watch -c -x 'nextest run -j1 --retries 2'
+    command: cargo watch -c -x 'nextest run -j 1 --retries 2'
 
   - name: check
     command: "cargo check"
@@ -59,7 +59,7 @@ tasks:
     command: cargo nextest run -j 1 --retries 2
 
   - name: rm-test-dbs
-    command: rm test-*
+    command: rm crates/synth_api/test-*
     description: Remove test databases with a glob pattern
 
   - name: clippy
