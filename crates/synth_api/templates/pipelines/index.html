@@ -1,0 +1,17 @@
+<h1>Pipelines</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Schedule</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pipeline in pipelines %}
+    <tr>
+      <td>{{pipeline.id}}</td>
+      <td>{{pipeline.schedule}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

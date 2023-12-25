@@ -30,7 +30,7 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
     let pipeline_instance = format!("{}_{}", pipeline.id, scheduled_time);
     let pipeline_id = pipeline.id.clone();
 
-    let tasks = queries::select_task_instances_by_pipeline_id(&pipeline_id, &db_pool)
+    let tasks = queries::select_task_by_pipeline_id(&pipeline_id, &db_pool)
         .await
         .unwrap();
 
@@ -47,7 +47,7 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
             // Run the Task subprocess
             let output = run_task_command(&task.command);
 
-            let task_instance_id = format!("{}_{}_{}", task.id, pipeline_instance, scheduled_time);
+            let task_instance_id = format!("{}_{}_{}", task.id, pipeline_id, scheduled_time);
             let task_instance = TaskInstance {
                 id: task_instance_id,
                 task_id: task.id,

@@ -1,9 +1,6 @@
-mod pipelines;
-mod task_instances;
-mod tasks;
-mod utility;
-
+use crate::api::{pipelines, task_instances, tasks, utility};
 use crate::models::JSONResponse;
+use crate::views;
 use actix_web::{http::Method, web, HttpResponse, Route};
 use std::fmt;
 
@@ -24,6 +21,22 @@ impl fmt::Display for Endpoint {
 /// This is used as a way to transparently document available endpoints.
 pub fn get_endpoints() -> Vec<Endpoint> {
     vec![
+        // Views
+        Endpoint {
+            path: "/",
+            method: Method::GET,
+            route: web::get().to(views::index),
+        },
+        Endpoint {
+            path: "/task_instances",
+            method: Method::GET,
+            route: web::get().to(views::task_instances::index),
+        },
+        Endpoint {
+            path: "/pipelines",
+            method: Method::GET,
+            route: web::get().to(views::pipelines::index),
+        },
         // Generic
         Endpoint {
             path: "/api/health",

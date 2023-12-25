@@ -1,0 +1,23 @@
+<h1>Task Instances</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Task</th>
+      <th>Pipeline</th>
+      <th>Execution Time</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in task_instances %}
+    <tr>
+      <td>{{task.id}}</td>
+      <td>{{task.task_id}}</td>
+      <td>{{task.pipeline_id}}</td>
+      <td>{{task.execution_time}}</td>
+      <td>{{task.status}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
