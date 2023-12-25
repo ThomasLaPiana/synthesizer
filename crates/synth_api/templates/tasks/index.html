@@ -4,20 +4,16 @@ head %} {% endblock %} {% block content %}
   <thead>
     <tr>
       <th>Id</th>
-      <th>Task</th>
-      <th>Pipeline</th>
-      <th>Execution Time</th>
-      <th>Status</th>
+      <th>Pipeline ID</th>
+      <th>Command</th>
     </tr>
   </thead>
   <tbody>
-    {% for task in task_instances %}
+    {% for task in tasks %}
     <tr>
       <td>{{task.id}}</td>
-      <td>{{task.task_id}}</td>
       <td>{{task.pipeline_id}}</td>
-      <td>{{task.execution_time}}</td>
-      <td>{{task.status}}</td>
+      <td>{{task.command}}</td>
     </tr>
     {% endfor %}
   </tbody>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{% block title %}{{ title }}{% endblock %}</title>
+    <div>
+      <h1>
+        Synthesizer - {% block title %}{{ title }}{% endblock %}
+        <a href="/"> Home </a>
+        <a href="/pipelines"> | Pipelines </a>
+        <a href="/task_instances"> | Task Instances </a>
+        <a href="/tasks"> | Tasks </a>
+      </h1>
+    </div>
+  </head>
+  <body>
+    <div id="content">{% block content %} {% endblock %}</div>
+  </body>
+</html>

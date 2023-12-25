@@ -1,5 +1,6 @@
 pub mod pipelines;
 pub mod task_instances;
+pub mod tasks;
 
 use actix_web::HttpResponse;
 use askama::Template;

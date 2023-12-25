@@ -36,6 +36,14 @@ pub async fn select_task_by_pipeline_id(
     Ok(tasks)
 }
 
+/// Get all Tasks
+pub async fn select_tasks(db_pool: &Pool<Sqlite>) -> Result<Vec<Task>, sqlx::Error> {
+    let tasks = sqlx::query_as!(Task, "SELECT * FROM tasks ORDER BY pipeline_id")
+        .fetch_all(db_pool)
+        .await?;
+    Ok(tasks)
+}
+
 /// Get all Pipelines
 pub async fn select_pipelines(db_pool: &Pool<Sqlite>) -> Result<Vec<Pipeline>, sqlx::Error> {
     let pipelines = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines",)

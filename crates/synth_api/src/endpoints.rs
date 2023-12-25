@@ -37,6 +37,11 @@ pub fn get_endpoints() -> Vec<Endpoint> {
             method: Method::GET,
             route: web::get().to(views::pipelines::index),
         },
+        Endpoint {
+            path: "/tasks",
+            method: Method::GET,
+            route: web::get().to(views::tasks::index),
+        },
         // Generic
         Endpoint {
             path: "/api/health",
