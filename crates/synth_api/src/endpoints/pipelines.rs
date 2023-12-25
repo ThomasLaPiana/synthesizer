@@ -1,10 +1,10 @@
-use super::models::JSONResponse;
+use crate::models::JSONResponse;
 use actix_web::{web, HttpResponse};
 use sqlx::SqlitePool;
 use synth_common::models::Pipeline;
 
 /// Return a list of all pipelines
-pub async fn list_pipelines(db_pool: web::Data<SqlitePool>) -> HttpResponse {
+pub async fn list(db_pool: web::Data<SqlitePool>) -> HttpResponse {
     let pipelines = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines")
         .fetch_all(db_pool.get_ref())
         .await
@@ -18,7 +18,7 @@ pub async fn list_pipelines(db_pool: web::Data<SqlitePool>) -> HttpResponse {
 }
 
 /// Get a specific Pipeline
-pub async fn get_pipeline(path: web::Path<String>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
+pub async fn get(path: web::Path<String>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
     let id = path.to_string();
     let pipeline = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines WHERE id = ?", id)
         .fetch_one(db_pool.get_ref())
@@ -33,10 +33,7 @@ pub async fn get_pipeline(path: web::Path<String>, db_pool: web::Data<SqlitePool
 }
 
 /// Create a Pipeline
-pub async fn create_pipeline(
-    pipeline: web::Json<Pipeline>,
-    db_pool: web::Data<SqlitePool>,
-) -> HttpResponse {
+pub async fn create(pipeline: web::Json<Pipeline>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
     sqlx::query!(
         "INSERT INTO pipelines (id, schedule) VALUES(?, ?)",
         pipeline.id,

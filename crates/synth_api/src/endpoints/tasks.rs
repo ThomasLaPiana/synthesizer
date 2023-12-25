@@ -1,10 +1,10 @@
-use super::models::JSONResponse;
+use crate::models::JSONResponse;
 use actix_web::{web, HttpResponse};
 use sqlx::SqlitePool;
 use synth_common::models::Task;
 
 /// Return a list of all Tasks
-pub async fn list_tasks(db_pool: web::Data<SqlitePool>) -> HttpResponse {
+pub async fn list(db_pool: web::Data<SqlitePool>) -> HttpResponse {
     let tasks = sqlx::query_as!(Task, "SELECT * FROM tasks")
         .fetch_all(db_pool.get_ref())
         .await
@@ -18,7 +18,7 @@ pub async fn list_tasks(db_pool: web::Data<SqlitePool>) -> HttpResponse {
 }
 
 /// Get a specific Task
-pub async fn get_task(path: web::Path<String>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
+pub async fn get(path: web::Path<String>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
     let id = path.to_string();
     let task = sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = ?", id)
         .fetch_one(db_pool.get_ref())
@@ -33,7 +33,7 @@ pub async fn get_task(path: web::Path<String>, db_pool: web::Data<SqlitePool>) -
 }
 
 /// Create a Task
-pub async fn create_task(task: web::Json<Task>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
+pub async fn create(task: web::Json<Task>, db_pool: web::Data<SqlitePool>) -> HttpResponse {
     sqlx::query!(
         "INSERT INTO tasks (id, pipeline_id, command) VALUES(?, ?, ?)",
         task.id,

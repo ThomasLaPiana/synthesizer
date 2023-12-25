@@ -1,7 +1,9 @@
-use super::models::JSONResponse;
-use super::pipeline_endpoints::{create_pipeline, get_pipeline, list_pipelines};
-use super::task_endpoints::{create_task, get_task, list_tasks};
-use super::task_instance_endpoints::{get_task_instance, list_task_instances};
+mod pipelines;
+mod task_instances;
+mod tasks;
+mod utility;
+
+use crate::models::JSONResponse;
 use actix_web::{http::Method, web, HttpResponse, Route};
 use std::fmt;
 
@@ -26,7 +28,7 @@ pub fn get_endpoints() -> Vec<Endpoint> {
         Endpoint {
             path: "/api/health",
             method: Method::GET,
-            route: web::get().to(health),
+            route: web::get().to(utility::health),
         },
         Endpoint {
             path: "/api/endpoints",
@@ -37,59 +39,50 @@ pub fn get_endpoints() -> Vec<Endpoint> {
         Endpoint {
             path: "/api/pipelines",
             method: Method::GET,
-            route: web::get().to(list_pipelines),
+            route: web::get().to(pipelines::list),
         },
         Endpoint {
             path: "/api/pipelines/{id}",
             method: Method::GET,
-            route: web::get().to(get_pipeline),
+            route: web::get().to(pipelines::get),
         },
         Endpoint {
             path: "/api/pipelines",
             method: Method::POST,
-            route: web::post().to(create_pipeline),
+            route: web::post().to(pipelines::create),
         },
         // Tasks
         Endpoint {
             path: "/api/tasks",
             method: Method::GET,
-            route: web::get().to(list_tasks),
+            route: web::get().to(tasks::list),
         },
         Endpoint {
             path: "/api/tasks",
             method: Method::POST,
-            route: web::post().to(create_task),
+            route: web::post().to(tasks::create),
         },
         Endpoint {
             path: "/api/tasks/{id}",
             method: Method::GET,
-            route: web::get().to(get_task),
+            route: web::get().to(tasks::get),
         },
         // Task Instances
         Endpoint {
             path: "/api/task_instances",
             method: Method::GET,
-            route: web::get().to(list_task_instances),
+            route: web::get().to(task_instances::list),
         },
         Endpoint {
             path: "/api/task_instances/{id}",
             method: Method::GET,
-            route: web::get().to(get_task_instance),
+            route: web::get().to(task_instances::get),
         },
     ]
 }
 
-/// Standard health endpoint
-async fn health() -> HttpResponse {
-    let response_data = JSONResponse::<String> {
-        data: Some(vec!["Feeling healthy!".to_string()]),
-        errors: None,
-    };
-    HttpResponse::Ok().json(response_data)
-}
-
 /// Show all of the available routes for the server
-async fn list_endpoints() -> HttpResponse {
+pub async fn list_endpoints() -> HttpResponse {
     let endpoints: Vec<String> = get_endpoints()
         .iter()
         .map(|endpoint| endpoint.to_string())
