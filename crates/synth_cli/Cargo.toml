@@ -21,7 +21,11 @@ sqlx = { version = "0.7.1", features = [
 ] }
 tokio = { version = "1.31.0", features = ["full"] }
 uuid = { version = "1.6.1", features = ["v4"] }
+
+# Local Crates
 synth_common = { path = "../synth_common" }
+synth_scheduler = { path = "../synth_scheduler" }
+synth_api = { path = "../synth_api" }
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"

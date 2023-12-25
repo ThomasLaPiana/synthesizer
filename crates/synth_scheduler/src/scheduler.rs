@@ -3,7 +3,7 @@ use cron_parser::parse;
 use sqlx::{self, Pool, Sqlite};
 use std::collections::HashMap;
 use std::process::{Command, Output, Stdio};
-use synth_common::models::{Pipeline, Task, TaskInstance};
+use synth_common::models::{Pipeline, TaskInstance};
 use synth_common::{database, queries};
 use tracing::{error, info, instrument, span, Level};
 

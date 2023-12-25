@@ -38,8 +38,6 @@ pub fn cli_builder() -> Command {
                 .arg(&manifest_filepath),
         )
         .subcommand(Command::new("config").about("Show the config values that are being used."))
-        .subcommand(Command::new("setupdb").about("Create the database and run migrations."))
-        .subcommand(Command::new("status").about("Ping the server."))
         .subcommand(
             Command::new("ls")
                 .about("List resources from the server.")
@@ -50,6 +48,10 @@ pub fn cli_builder() -> Command {
                 .about("Upsert pipeline(s) to the server.")
                 .arg(&manifest_filepath),
         )
+        .subcommand(Command::new("scheduler").about("Start the Synth scheduler."))
+        .subcommand(Command::new("setupdb").about("Create the database and run migrations."))
+        .subcommand(Command::new("status").about("Ping the webserver."))
+        .subcommand(Command::new("webserver").about("Start the Synth API Webserver."))
 }
 
 /// Send the manifest to the server
@@ -83,6 +85,8 @@ pub async fn run() {
             );
         }
         Some(("config", _)) => println!("> Config Values:\n{:#?}", config),
+        Some(("webserver", _)) => synth_api::start().await,
+        Some(("scheduler", _)) => synth_scheduler::start().await,
         Some(("status", _)) => {
             if utils::check_url_reachable_and_success(&server_url) {
                 println! {"Server is reachable!"}

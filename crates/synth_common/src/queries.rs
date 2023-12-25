@@ -1,4 +1,4 @@
-use super::models::{Pipeline, Task, TaskInstance};
+use super::models::{Task, TaskInstance};
 use sqlx::{self, Pool, Sqlite};
 
 /// Insert a TaskInstance into the database
