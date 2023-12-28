@@ -6,7 +6,9 @@ head %} {% endblock %} {% block content %}
       <th>Id</th>
       <th>Task</th>
       <th>Pipeline</th>
-      <th>Execution Time</th>
+      <th>Scheduled Time</th>
+      <th>Execution Start</th>
+      <th>Execution End</th>
       <th>Status</th>
     </tr>
   </thead>
@@ -16,7 +18,9 @@ head %} {% endblock %} {% block content %}
       <td>{{task.id}}</td>
       <td>{{task.task_id}}</td>
       <td>{{task.pipeline_id}}</td>
-      <td>{{task.execution_time}}</td>
+      <td>{{task.scheduled_time}}</td>
+      <td>{{task.execution_start}}</td>
+      <td>{{task.execution_end}}</td>
       <td>{{task.status}}</td>
     </tr>
     {% endfor %}

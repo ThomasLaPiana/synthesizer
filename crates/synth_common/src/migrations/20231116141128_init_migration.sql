@@ -60,7 +60,9 @@ CREATE TABLE IF NOT EXISTS task_instances (
     id TEXT NOT NULL PRIMARY KEY
     , task_id TEXT NOT NULL
     , pipeline_id TEXT NOT NULL
-    , execution_time TEXT NOT NULL
+    , scheduled_time TEXT NOT NULL
+    , execution_start TEXT NOT NULL
+    , execution_end TEXT NOT NULL
     , status TEXT NOT NULL
     , logs TEXT NOT NULL
     , created_at TEXT NOT NULL

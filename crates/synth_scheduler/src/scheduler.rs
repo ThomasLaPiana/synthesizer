@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::process::{Command, Output, Stdio};
 use synth_common::models::{Pipeline, TaskInstance};
 use synth_common::{database, queries};
-use tracing::{error, info, instrument, span, Level};
+use tracing::{error, info, span, Level};
 
 async fn async_sleep(sleep_secs: u64) {
     let sleep_duration = tokio::time::Duration::from_secs(sleep_secs);
@@ -24,8 +24,9 @@ fn run_task_command(task_command: &str) -> Output {
         .expect("Failed to wait on the Task!")
 }
 
-#[instrument(name = "PipelineRunner", skip_all)]
 async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_pool: Pool<Sqlite>) {
+    let span = span!(Level::INFO, "PipelineRunner");
+    let _enter = span.enter();
     info!("Running Pipeline: {}", &pipeline.id);
     let pipeline_instance = format!("{}_{}", pipeline.id, scheduled_time);
     let pipeline_id = pipeline.id.clone();
@@ -37,25 +38,29 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
     info!("Executing Pipeline Instance: {}", pipeline_instance);
     // Spawn a new thread to handle the Pipeline's tasks
     tokio::task::spawn(async move {
+        let span = span!(Level::INFO, "TaskRunner");
+        let _enter = span.enter();
         for task in tasks {
-            let span = span!(Level::INFO, "TaskRunner");
-            let _enter = span.enter();
+            let execution_start = Utc::now().to_string();
             info!(
                 "Task '{}' for Pipeline '{}' has started!",
                 task.id, pipeline_id
             );
             // Run the Task subprocess
-            let output = run_task_command(&task.command);
+            let result = run_task_command(&task.command);
+            let execution_end = Utc::now().to_string();
 
             let task_instance_id = format!("{}_{}_{}", task.id, pipeline_id, scheduled_time);
             let task_instance = TaskInstance {
                 id: task_instance_id,
                 task_id: task.id,
+                execution_start,
+                execution_end,
                 pipeline_id: pipeline_id.clone(),
-                execution_time: scheduled_time.to_string(),
-                status: output.status.to_string(),
+                scheduled_time: scheduled_time.to_string(),
+                status: result.status.to_string(),
                 // TODO: add Stderr
-                logs: format!("{:?}", output.stdout),
+                logs: format!("{:?}", result.stdout),
                 created_at: Utc::now().to_string(),
             };
             info!("Saving to database...");
@@ -64,7 +69,7 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
                 .unwrap();
 
             // Store the results in the database
-            if output.status.success() {
+            if result.status.success() {
                 info!("Task succeeded!");
             } else {
                 error!("Task failed! Stopping Pipeline.");
@@ -74,14 +79,16 @@ async fn pipeline_runner(pipeline: Pipeline, scheduled_time: DateTime<Utc>, db_p
     });
 }
 
-#[instrument(name = "Scheduler", skip_all)]
 pub async fn run_scheduler() {
+    let span = span!(Level::INFO, "Scheduler");
+    let _enter = span.enter();
     let db_pool = database::get_db_pool().await;
 
     // In-memory map of the pipelines and their next execution time
+    // TODO: Move this to a database table?
     let mut pipeline_schedules: HashMap<String, DateTime<Utc>> = HashMap::new();
 
-    // This never-ending loop is the scheduler
+    // This infinite loop is the scheduler
     loop {
         info!("------------------------------");
         let pipelines: Vec<Pipeline> = sqlx::query_as!(Pipeline, "SELECT * FROM pipelines")

@@ -18,14 +18,10 @@ pub struct TaskInstance {
     pub id: String,
     pub task_id: String,
     pub pipeline_id: String,
-    pub execution_time: String,
+    pub scheduled_time: String,
+    pub execution_start: String,
+    pub execution_end: String,
     pub status: String,
     pub logs: String,
     pub created_at: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct Manifest {
-    pub pipelines: Vec<Pipeline>,
-    pub tasks: Vec<Task>,
 }

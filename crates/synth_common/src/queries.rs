@@ -7,17 +7,78 @@ pub async fn insert_task_instance(
     db_pool: &Pool<Sqlite>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
-                "INSERT INTO task_instances (id, task_id, pipeline_id, execution_time, status, logs, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO task_instances (id, task_id, pipeline_id, scheduled_time, execution_start, execution_end, status, logs, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 task_instance.id,
                 task_instance.task_id,
                 task_instance.pipeline_id,
-                task_instance.execution_time,
+                task_instance.scheduled_time,
+                task_instance.execution_start,
+                task_instance.execution_end,
                 task_instance.status,
                 task_instance.logs,
                 task_instance.created_at,
             )
             .execute(db_pool)
             .await?;
+    Ok(())
+}
+
+/// Upsert a Pipeline
+pub async fn upsert_pipeline(
+    pipeline: &Pipeline,
+    db_pool: &Pool<Sqlite>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "INSERT INTO pipelines (id, schedule) VALUES(?, ?) ON CONFLICT(id) DO UPDATE SET schedule = ?",
+        pipeline.id,
+        pipeline.schedule,
+        pipeline.schedule,
+    )
+    .execute(db_pool)
+    .await?;
+    Ok(())
+}
+
+/// Insert a Pipeline
+pub async fn insert_pipeline(
+    pipeline: Pipeline,
+    db_pool: &Pool<Sqlite>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "INSERT INTO pipelines (id, schedule) VALUES(?, ?)",
+        pipeline.id,
+        pipeline.schedule,
+    )
+    .execute(db_pool)
+    .await?;
+    Ok(())
+}
+
+/// Insert a Task
+pub async fn insert_task(task: Task, db_pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "INSERT INTO tasks (id, pipeline_id, command) VALUES(?, ?, ?)",
+        task.id,
+        task.pipeline_id,
+        task.command,
+    )
+    .execute(db_pool)
+    .await?;
+    Ok(())
+}
+
+/// Upsert a Task
+pub async fn upsert_task(task: &Task, db_pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "INSERT INTO tasks (id, pipeline_id, command) VALUES(?, ?, ?) ON CONFLICT(id) DO UPDATE SET pipeline_id = ?, command = ?",
+        task.id,
+        task.pipeline_id,
+        task.command,
+        task.pipeline_id,
+        task.command,
+    )
+    .execute(db_pool)
+    .await?;
     Ok(())
 }
 

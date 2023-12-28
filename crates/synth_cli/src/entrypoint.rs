@@ -1,10 +1,7 @@
-use super::{commands, entrypoint, utils};
+use super::{commands, entrypoint, register, utils};
 use clap::{crate_version, Arg, Command};
-use reqwest::blocking::Client;
-use serde_json::json;
 use synth_common::config::{load_config, BuildUrl};
 use synth_common::database;
-use synth_common::models::Manifest;
 
 /// Construct the CLI
 pub fn cli_builder() -> Command {
@@ -54,15 +51,6 @@ pub fn cli_builder() -> Command {
         .subcommand(Command::new("webserver").about("Start the Synth API Webserver."))
 }
 
-/// Send the manifest to the server
-pub fn register(url: &str, manifest: Manifest) -> bool {
-    let json_data = json!(manifest);
-    let client = Client::new();
-    let res = client.post(url).json(&json_data).send().unwrap();
-    println!("{:?}", res.status());
-    true
-}
-
 pub async fn run() {
     // Parse and validate the CLI
     let cli = entrypoint::cli_builder().get_matches();
@@ -94,7 +82,7 @@ pub async fn run() {
         }
         Some(("register", sub_matches)) => {
             let manifest = commands::check(sub_matches);
-            entrypoint::register(&server_url, manifest);
+            register::register(&server_url, manifest).await;
         }
         _ => unreachable!("'subcommand_required' prevents 'None'"),
     }

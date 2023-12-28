@@ -4,12 +4,13 @@
     <title>{% block title %}{{ title }}{% endblock %}</title>
     <div>
       <h1>
-        Synthesizer - {% block title %}{{ title }}{% endblock %}
+        Synthesizer -
         <a href="/"> Home </a>
         <a href="/pipelines"> | Pipelines </a>
         <a href="/task_instances"> | Task Instances </a>
         <a href="/tasks"> | Tasks </a>
       </h1>
+      <h2>{% block title %}{{ title }}{% endblock %}</h2>
     </div>
   </head>
   <body>

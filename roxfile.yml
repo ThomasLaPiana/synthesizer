@@ -40,6 +40,9 @@ tasks:
   - name: scheduler
     command: cargo watch -c -x 'run -p synth_scheduler'
 
+  - name: cli
+    command: cargo watch -c -x 'run -p synth_cli check'
+
   - name: wt
     description: "Watch the src files and test on changes"
     command: cargo watch -c -x 'nextest run -j 1 --retries 2'

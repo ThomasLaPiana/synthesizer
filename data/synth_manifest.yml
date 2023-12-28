@@ -1,12 +1,15 @@
 pipelines:
-  - id: pipeline1
+  - id: manifest_pipeline
     schedule: "1 * * * *"
+    tasks:
+      - id: task1
+        command: echo "task1"
 
-tasks:
-  - id: task1
-    pipeline_id: pipeline1
-    command: echo "task1"
+      - id: task2
+        command: echo "task1"
 
-  - id: task2
-    pipeline_id: pipeline1
-    command: echo "task1"
+      - id: task3
+        command: sleep 5
+
+      - id: task4
+        command: sleep 3

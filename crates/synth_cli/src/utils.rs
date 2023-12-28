@@ -1,3 +1,5 @@
+use reqwest::Client;
+
 /// Load a file into a String
 pub fn load_file(file_path: &str) -> String {
     match std::fs::read_to_string(file_path) {
@@ -28,4 +30,17 @@ pub fn check_url_reachable_and_success(url: &str) -> bool {
         return true;
     }
     false
+}
+
+/// POST a JSON object to a URL
+pub async fn post_json(
+    url: &str,
+    json_data: &serde_json::Value,
+) -> Result<reqwest::Response, reqwest::Error> {
+    let client = Client::new();
+    let result = client.post(url).json(json_data).send().await?;
+    match result.error_for_status_ref() {
+        Ok(_) => Ok(result),
+        Err(e) => Err(e),
+    }
 }
